@@ -1,0 +1,111 @@
+projects:
+  plinng-web:
+    path: /Users/guillermosierraaiello/dev/plinng-web
+    repo: https://github.com/G97-TECH-MKT/plinng-web
+    stack: nextjs
+    agents_md: true
+    commands:
+      dev: "npm run dev"
+      build: "npm run build"
+      test: "npm run test"
+      lint: "npm run lint"
+      deploy: "vercel deploy --prod"
+    aliases: ["plinng", "web", "marketing", "dashboard"]
+
+  plinng-expo:
+    path: /Users/guillermosierraaiello/dev/plinng-expo
+    repo: https://github.com/G97-TECH-MKT/orbidi-mobile-expo
+    stack: expo
+    agents_md: true
+    commands:
+      dev: "npx expo start"
+      build: "eas build"
+      test: "npm run test"
+      lint: "npm run lint"
+    aliases: ["expo", "mobile", "app"]
+
+  plinng-mobile:
+    path: /Users/guillermosierraaiello/dev/plinng-mobile
+    repo: https://github.com/G97-TECH-MKT/plinng-mobile
+    stack: react-native
+    agents_md: false
+    commands:
+      dev: "npx react-native start"
+      build: "npx react-native build-android"
+      test: "npm run test"
+    aliases: ["plinng-rn"]
+
+  plinng-api-MARKETIQ:
+    path: /Users/guillermosierraaiello/dev/plinng-api-MARKETIQ
+    repo: https://github.com/G97-TECH-MKT/MARKETIQ
+    stack: fastapi
+    agents_md: false
+    commands:
+      dev: "uvicorn src.marketiq.main:app --reload"
+      test: "pytest"
+      lint: "ruff check ."
+      deploy: "docker build -t marketiq . && docker push marketiq"
+    aliases: ["api", "marketiq", "backend", "fastapi"]
+
+  divenamic:
+    path: /Users/guillermosierraaiello/dev/divenamic
+    repo: https://github.com/gsietsetb/divenamic
+    stack: vite-react
+    agents_md: true
+    commands:
+      dev: "npm run dev"
+      build: "npm run build"
+      test: "npm run test"
+      deploy: "wrangler deploy"
+    aliases: ["dive", "diving", "cursos"]
+
+  divenamic-ai:
+    path: /Users/guillermosierraaiello/dev/divenamic-ai
+    repo: https://github.com/gsietsetb/divenamic
+    stack: vite-react
+    agents_md: true
+    commands:
+      dev: "npm run dev"
+      build: "npm run build"
+    aliases: ["dive-ai", "dive-connect"]
+
+  PlanetMoji:
+    path: /Users/guillermosierraaiello/dev/PlanetMoji
+    repo: https://github.com/gsietsetb/PlanetMoji
+    stack: react-native
+    agents_md: false
+    commands:
+      dev: "npx react-native start"
+      build: "npx react-native build-android"
+    aliases: ["emoji", "planetmoji", "planet"]
+
+  laurel-gaming-mobile:
+    path: /Users/guillermosierraaiello/dev/laurel-gaming-mobile
+    repo: https://github.com/Laurel-Gaming/laurel-gaming-mobile
+    stack: turborepo
+    agents_md: false
+    commands:
+      dev: "turbo dev"
+      build: "turbo build"
+      test: "turbo test"
+    aliases: ["laurel", "gaming", "games"]
+
+  orbidi-mobile:
+    path: /Users/guillermosierraaiello/dev/orbidi-mobile
+    repo: https://github.com/G97-TECH-MKT/app_mobile
+    stack: react-native
+    agents_md: false
+    commands:
+      dev: "npx react-native start"
+      build: "npx react-native build-android"
+    aliases: ["orbidi"]
+
+  dopelist-react-native:
+    path: /Users/guillermosierraaiello/dev/dopelist-react-native
+    repo: https://github.com/dopelist/dopelist-react-native
+    stack: expo
+    agents_md: false
+    commands:
+      dev: "npx expo start"
+      build: "eas build"
+    aliases: ["dopelist", "dope"]

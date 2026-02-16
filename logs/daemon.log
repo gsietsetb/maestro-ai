@@ -1,0 +1,3 @@
+2026-02-16 13:49:04,620 [INFO] __main__: Discovered 11 projects in /Users/guillermosierraaiello/dev
+2026-02-16 13:49:04,620 [INFO] __main__: Agent 'MacBook-Pro-de-Guillermo-2.local' starting | capabilities: claude_code, node, python, docker, git, npm, pnpm | projects: 11 | connecting to ws://localhost:8000/ws/agent
+2026-02-16 13:49:04,650 [INFO] __main__: Connected and registered as 'MacBook-Pro-de-Guillermo-2.local'

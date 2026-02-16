@@ -1,0 +1,333 @@
+2026-02-16 13:49:03,270 [INFO] src.orchestrator.project_registry: Loaded 10 projects (35 aliases)
+2026-02-16 13:49:03,276 [INFO] __main__: Cursor Cloud Agents API enabled
+2026-02-16 13:49:03,282 [INFO] __main__: Improvement loop enabled: max 3 iterations, auto-tests, auto-quality
+2026-02-16 13:49:03,338 [INFO] src.monitors.github: GitHub monitor: tracking 10 repos
+2026-02-16 13:49:03,361 [INFO] src.orchestrator.task_tracker: Task tracker initialized at data/orchestrator.db
+2026-02-16 13:49:03,367 [INFO] src.events: Event store initialized: 141 events loaded
+2026-02-16 13:49:03,410 [INFO] __main__: WhatsApp Web Bridge handler registered at /wa-bridge/incoming
+2026-02-16 13:49:03,411 [INFO] __main__: Polling mode | Port 8000 | Dashboard: http://localhost:8000/dashboard
+INFO:     Started server process [99438]
+INFO:     Waiting for application startup.
+2026-02-16 13:49:03,440 [INFO] __main__: GitHub monitor started
+2026-02-16 13:49:03,440 [INFO] __main__: Vercel monitor started
+2026-02-16 13:49:03,440 [INFO] __main__: Project monitor started
+2026-02-16 13:49:03,440 [INFO] src.monitors.github: GitHub polling started (every 60s)
+2026-02-16 13:49:03,445 [INFO] src.monitors.projects: Project monitor started (every 300s, 10 projects)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+2026-02-16 13:49:03,455 [INFO] src.events: Event: bot_started | system | Sierra Bot started in polling mode
+2026-02-16 13:49:03,558 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getMe "HTTP/1.1 200 OK"
+2026-02-16 13:49:03,559 [INFO] telegram.ext.Application: Application started
+2026-02-16 13:49:03,596 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/deleteWebhook "HTTP/1.1 200 OK"
+2026-02-16 13:49:03,629 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getMe "HTTP/1.1 200 OK"
+2026-02-16 13:49:03,630 [INFO] __main__: Telegram polling started for @sierraAIBot
+2026-02-16 13:49:03,737 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/plinng-web/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:49:03,950 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/orbidi-mobile-expo/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:49:04,069 [INFO] httpx: HTTP Request: GET https://api.vercel.com/v9/projects "HTTP/1.1 200 OK"
+2026-02-16 13:49:04,085 [INFO] src.monitors.vercel: Vercel: found 8 projects, mapped 5 to local
+2026-02-16 13:49:04,085 [INFO] src.monitors.vercel: Vercel polling started (every 60s)
+2026-02-16 13:49:04,123 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/plinng-mobile/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:49:04,311 [INFO] httpx: HTTP Request: GET https://api.vercel.com/v6/deployments?limit=20&target=production "HTTP/1.1 200 OK"
+2026-02-16 13:49:04,356 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/MARKETIQ/commits?per_page=5 "HTTP/1.1 404 Not Found"
+INFO:     127.0.0.1:62722 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62726 - "GET /health HTTP/1.1" 200 OK
+2026-02-16 13:49:04,632 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/commits?per_page=5 "HTTP/1.1 200 OK"
+INFO:     ('127.0.0.1', 62730) - "WebSocket /ws/agent" [accepted]
+2026-02-16 13:49:04,649 [INFO] src.executors.agent_mesh: Agent connecting: 56e7af69
+INFO:     connection open
+2026-02-16 13:49:04,654 [INFO] src.executors.agent_mesh: Agent registered: MacBook-Pro-de-Guillermo-2.local (56e7af69) | 11 projects | capabilities: node, docker, git, npm, pnpm, claude_code, python
+2026-02-16 13:49:04,924 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/pulls?state=all&per_page=5&sort=updated&direction=desc "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:62739 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62740 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+2026-02-16 13:49:05,220 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/commits?per_page=5 "HTTP/1.1 200 OK"
+2026-02-16 13:49:05,586 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/pulls?state=all&per_page=5&sort=updated&direction=desc "HTTP/1.1 200 OK"
+2026-02-16 13:49:05,884 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/PlanetMoji/commits?per_page=5 "HTTP/1.1 200 OK"
+2026-02-16 13:49:06,271 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/PlanetMoji/pulls?state=all&per_page=5&sort=updated&direction=desc "HTTP/1.1 200 OK"
+2026-02-16 13:49:06,471 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/Laurel-Gaming/laurel-gaming-mobile/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:49:06,677 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/app_mobile/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:49:06,891 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/dopelist/dopelist-react-native/commits?per_page=5 "HTTP/1.1 404 Not Found"
+INFO:     127.0.0.1:62764 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62765 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+2026-02-16 13:49:13,661 [INFO] httpx: HTTP Request: GET http://localhost:3001/health "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:62781 - "GET /health HTTP/1.1" 200 OK
+2026-02-16 13:49:13,694 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:62793 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62794 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62816 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62818 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+2026-02-16 13:49:23,729 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:62841 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62842 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /dashboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62871 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62872 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /dashboard HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/registry HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+2026-02-16 13:49:33,762 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:62908 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62909 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62945 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62946 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:49:43,799 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:62983 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62984 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63017 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63018 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     192.168.0.20:53248 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     192.168.0.20:53249 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     192.168.0.20:53250 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:49:53,871 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63068 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63069 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63107 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63108 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:50:03,996 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+2026-02-16 13:50:05,187 [INFO] httpx: HTTP Request: GET https://api.vercel.com/v6/deployments?limit=20&target=production "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63141 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63142 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:50:07,183 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/plinng-web/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:50:07,446 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/orbidi-mobile-expo/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:50:07,636 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/plinng-mobile/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:50:07,839 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/MARKETIQ/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:50:08,114 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/commits?per_page=5 "HTTP/1.1 200 OK"
+2026-02-16 13:50:08,483 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/pulls?state=all&per_page=5&sort=updated&direction=desc "HTTP/1.1 200 OK"
+2026-02-16 13:50:08,762 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/commits?per_page=5 "HTTP/1.1 200 OK"
+2026-02-16 13:50:09,131 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/pulls?state=all&per_page=5&sort=updated&direction=desc "HTTP/1.1 200 OK"
+2026-02-16 13:50:09,414 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/PlanetMoji/commits?per_page=5 "HTTP/1.1 200 OK"
+2026-02-16 13:50:09,762 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/PlanetMoji/pulls?state=all&per_page=5&sort=updated&direction=desc "HTTP/1.1 200 OK"
+2026-02-16 13:50:09,951 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/Laurel-Gaming/laurel-gaming-mobile/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:50:10,161 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/app_mobile/commits?per_page=5 "HTTP/1.1 404 Not Found"
+INFO:     127.0.0.1:63179 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+2026-02-16 13:50:10,381 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/dopelist/dopelist-react-native/commits?per_page=5 "HTTP/1.1 404 Not Found"
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:50:14,051 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63215 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63216 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63251 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63252 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63254 - "GET /dashboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63254 - "GET /api/registry HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63257 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63259 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63260 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /dashboard HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /dashboard HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/registry HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+2026-02-16 13:50:24,090 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63300 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63301 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63302 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63340 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63343 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63344 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63344 - "GET /dashboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63344 - "GET /api/registry HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63343 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63340 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63356 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:50:34,127 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63384 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63385 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63386 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63386 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63385 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63384 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63421 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63422 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63423 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63423 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63422 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63421 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:50:44,169 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63456 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63457 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63458 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63458 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63457 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63456 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63494 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63495 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63497 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     192.168.0.20:53275 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     192.168.0.20:53276 - "GET /api/events?limit=50 HTTP/1.1" 200 OK
+INFO:     192.168.0.20:53277 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63497 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63495 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63494 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:50:54,206 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63524 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63525 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63526 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63526 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63525 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63524 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63564 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63566 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63567 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63584 - "GET /dashboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63584 - "GET /api/registry HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63585 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63589 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63585 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:63590 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63567 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63566 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63564 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:51:04,390 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+2026-02-16 13:51:05,941 [INFO] httpx: HTTP Request: GET https://api.vercel.com/v6/deployments?limit=20&target=production "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63618 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63620 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63621 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63590 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63585 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63589 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63621 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63620 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63618 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:51:10,663 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/plinng-web/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:51:10,883 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/orbidi-mobile-expo/commits?per_page=5 "HTTP/1.1 404 Not Found"
+INFO:     127.0.0.1:63652 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63653 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63654 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:51:11,058 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/plinng-mobile/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:51:11,299 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/MARKETIQ/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:51:11,566 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/commits?per_page=5 "HTTP/1.1 200 OK"
+2026-02-16 13:51:11,881 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/pulls?state=all&per_page=5&sort=updated&direction=desc "HTTP/1.1 200 OK"
+2026-02-16 13:51:12,175 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/commits?per_page=5 "HTTP/1.1 200 OK"
+2026-02-16 13:51:12,513 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/divenamic/pulls?state=all&per_page=5&sort=updated&direction=desc "HTTP/1.1 200 OK"
+2026-02-16 13:51:12,813 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/PlanetMoji/commits?per_page=5 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63589 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63585 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63590 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:51:13,113 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/gsietsetb/PlanetMoji/pulls?state=all&per_page=5&sort=updated&direction=desc "HTTP/1.1 200 OK"
+2026-02-16 13:51:13,365 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/Laurel-Gaming/laurel-gaming-mobile/commits?per_page=5 "HTTP/1.1 404 Not Found"
+INFO:     127.0.0.1:63654 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63653 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63652 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:51:13,587 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/G97-TECH-MKT/app_mobile/commits?per_page=5 "HTTP/1.1 404 Not Found"
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:51:13,815 [INFO] httpx: HTTP Request: GET https://api.github.com/repos/dopelist/dopelist-react-native/commits?per_page=5 "HTTP/1.1 404 Not Found"
+2026-02-16 13:51:15,005 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63685 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63686 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63687 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63707 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63708 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63704 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63687 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63686 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63685 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63731 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63732 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63733 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63704 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63708 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63707 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63733 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63732 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63731 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:51:25,040 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63764 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63765 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63766 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63707 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63708 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63704 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63766 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63765 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63764 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63797 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63798 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63800 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63704 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63708 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63707 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63800 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63798 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63797 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     37.223.35.113:0 - "GET /api/tasks HTTP/1.1" 200 OK
+2026-02-16 13:51:35,080 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8498926563:AAEXZ3KqDcgsuhOG8KsMB28QhUev-Ttv32U/getUpdates "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63833 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63834 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63835 - "GET /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63707 - "GET /api/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63708 - "GET /api/events?limit=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63704 - "GET /api/tasks HTTP/1.1" 200 OK

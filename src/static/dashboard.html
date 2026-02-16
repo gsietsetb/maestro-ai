@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sierra Bot – Command Center</title>
+<style>
+:root {
+  --bg: #06060b; --s1: #0d0d16; --s2: #151528; --s3: #1e1e3a;
+  --brd: #2a2a50; --brd2: #3a3a70;
+  --txt: #e8e8f4; --txt2: #8080a8; --txt3: #5858788;
+  --acc: #6c5ce7; --acc2: #a29bfe;
+  --grn: #00d2a0; --grn2: #00d2a033;
+  --ylw: #ffc048; --ylw2: #ffc04833;
+  --red: #ff5e57; --red2: #ff5e5733;
+  --blu: #54a0ff; --blu2: #54a0ff33;
+  --pur: #a29bfe; --cyn: #00cec9; --org: #ff9f43;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── Header ──────────────────────── */
+.hdr{background:linear-gradient(135deg,var(--s1),var(--s2));border-bottom:1px solid var(--brd);padding:.6rem 1.2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+.hdr h1{font-size:1rem;font-weight:800;letter-spacing:-.02em}
+.hdr h1 b{color:var(--acc)}
+.hdr-r{display:flex;gap:.5rem;font-size:.68rem;color:var(--txt2);align-items:center}
+.badge{background:var(--s1);padding:.2rem .5rem;border-radius:14px;border:1px solid var(--brd);display:flex;align-items:center;gap:.25rem}
+.badge .v{color:var(--acc2);font-weight:700}
+.live{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pulse-d 2s infinite;display:inline-block}
+@keyframes pulse-d{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,210,160,.6)}50%{opacity:.6;box-shadow:0 0 0 5px rgba(0,210,160,0)}}
+
+/* ── Command Bar ─────────────────── */
+.cmd{display:flex;gap:.4rem;padding:.5rem 1.2rem;background:var(--s1);border-bottom:1px solid var(--brd);align-items:center}
+.cmd select{background:var(--s2);color:var(--txt);border:1px solid var(--brd);border-radius:7px;padding:.4rem .5rem;font-size:.72rem;min-width:140px;outline:none}
+.cmd input{flex:1;background:var(--s2);color:var(--txt);border:1px solid var(--brd);border-radius:7px;padding:.45rem .7rem;font-size:.78rem;outline:none;font-family:inherit}
+.cmd input:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(108,92,231,.2)}
+.cmd input::placeholder{color:var(--txt2)}
+.cmd-btn{background:var(--acc);color:#fff;border:none;border-radius:7px;padding:.45rem 1rem;font-size:.78rem;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap}
+.cmd-btn:hover{background:var(--acc2);transform:translateY(-1px)}
+.cmd-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.cmd-fb{padding:0 1.2rem;font-size:.68rem;min-height:0;transition:.3s;overflow:hidden}
+.cmd-fb.show{padding:.3rem 1.2rem;background:var(--s1);border-bottom:1px solid var(--brd)}
+.cmd-fb.ok{color:var(--grn)}.cmd-fb.err{color:var(--red)}.cmd-fb.info{color:var(--blu)}
+
+/* ── Flow Section ────────────────── */
+.flow-section{padding:1rem 1.2rem;background:linear-gradient(180deg,var(--s1) 0%,var(--bg) 100%)}
+.flow-title{font-size:.7rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem}
+.flow{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:.5rem 0}
+.flow-col{display:flex;flex-direction:column;gap:.5rem;align-items:center;min-width:120px}
+.flow-arrow{display:flex;align-items:center;color:var(--brd);font-size:1.2rem;padding:0 .3rem;margin-top:1.5rem}
+.flow-arrow.active{color:var(--acc);animation:arrow-pulse 1.5s infinite}
+@keyframes arrow-pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ── Flow Nodes ──────────────────── */
+.node{background:var(--s2);border:1.5px solid var(--brd);border-radius:10px;padding:.6rem;width:110px;text-align:center;transition:.3s;position:relative;cursor:default}
+.node:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 4px 20px rgba(108,92,231,.15)}
+.node.active{border-color:var(--grn);box-shadow:0 0 12px rgba(0,210,160,.2)}
+.node.active::after{content:'';position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:var(--grn);animation:pulse-d 1.5s infinite}
+.node-icon{font-size:1.4rem;margin-bottom:.2rem}
+.node-name{font-size:.65rem;font-weight:700;color:var(--txt);line-height:1.2}
+.node-where{font-size:.55rem;color:var(--txt2);margin-top:.15rem;display:flex;align-items:center;justify-content:center;gap:.2rem}
+.node-count{font-size:.55rem;color:var(--acc2);font-weight:700;margin-top:.15rem}
+.where-cloud{color:var(--blu)}
+.where-mac{color:var(--grn)}
+.where-google{color:var(--ylw)}
+
+/* ── Pipeline ────────────────────── */
+.pipeline{padding:.8rem 1.2rem}
+.pipe-title{font-size:.7rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.6rem}
+.pipe-list{display:flex;flex-direction:column;gap:.5rem;max-height:300px;overflow-y:auto}
+.pipe-item{background:var(--s1);border:1px solid var(--brd);border-radius:8px;padding:.6rem .8rem;display:grid;grid-template-columns:auto 1fr auto;gap:.6rem;align-items:center;animation:slide-in .4s ease-out}
+@keyframes slide-in{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+.pipe-status{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700}
+.pipe-status.running{background:var(--blu2);color:var(--blu);animation:spin-icon 3s linear infinite}
+@keyframes spin-icon{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.pipe-status.ok{background:var(--grn2);color:var(--grn)}
+.pipe-status.fail{background:var(--red2);color:var(--red)}
+.pipe-status.pending{background:var(--ylw2);color:var(--ylw)}
+.pipe-body{min-width:0}
+.pipe-proj{font-weight:700;font-size:.78rem;color:var(--pur)}
+.pipe-msg{font-size:.7rem;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px}
+.pipe-meta{font-size:.62rem;color:var(--txt2)}
+.pipe-where{font-size:.6rem;padding:.15rem .4rem;border-radius:5px;font-weight:600;white-space:nowrap}
+.pipe-where.cursor{background:#7c3aed22;color:#a78bfa}
+.pipe-where.gemini{background:#fbbf2422;color:#fbbf24}
+.pipe-where.mac{background:var(--grn2);color:var(--grn)}
+
+/* ── Main Grid ───────────────────── */
+.main{display:grid;grid-template-columns:1fr 1fr 320px;gap:.8rem;padding:.8rem 1.2rem}
+
+/* ── Cards ───────────────────────── */
+.card{background:var(--s1);border:1px solid var(--brd);border-radius:10px;overflow:hidden}
+.card-h{padding:.5rem .7rem;border-bottom:1px solid var(--brd);font-size:.68rem;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center;background:var(--s2)}
+.card-h .c{color:var(--acc2);font-weight:700}
+.card-b{padding:.6rem}
+
+/* ── Vercel Deploys ──────────────── */
+.deploy-item{display:flex;justify-content:space-between;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--brd);font-size:.72rem}
+.deploy-item:last-child{border-bottom:none}
+.deploy-status{font-size:.6rem;padding:.12rem .4rem;border-radius:5px;font-weight:600}
+.deploy-status.ready{background:var(--grn2);color:var(--grn)}
+.deploy-status.building{background:var(--ylw2);color:var(--ylw);animation:pulse-d 2s infinite}
+.deploy-status.error{background:var(--red2);color:var(--red)}
+.deploy-url{color:var(--blu);text-decoration:none;font-size:.65rem}
+.deploy-url:hover{text-decoration:underline}
+
+/* ── Web Previews ────────────────── */
+.previews{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.preview-card{background:var(--s2);border:1px solid var(--brd);border-radius:8px;overflow:hidden;transition:.3s}
+.preview-card:hover{border-color:var(--acc);box-shadow:0 4px 15px rgba(108,92,231,.1)}
+.preview-frame{width:100%;height:120px;border:none;background:var(--s3);pointer-events:none}
+.preview-info{padding:.4rem .5rem;display:flex;justify-content:space-between;align-items:center}
+.preview-name{font-size:.68rem;font-weight:700}
+.preview-link{font-size:.6rem;color:var(--blu);text-decoration:none}
+.preview-link:hover{text-decoration:underline}
+
+/* ── Projects Grid ───────────────── */
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
+.proj-card{background:var(--s2);border:1px solid var(--brd);border-radius:7px;padding:.5rem;transition:.2s}
+.proj-card:hover{border-color:var(--acc)}
+.proj-name{font-weight:700;font-size:.78rem;display:flex;align-items:center;gap:.25rem;margin-bottom:.2rem}
+.proj-meta{font-size:.62rem;color:var(--txt2);display:flex;flex-wrap:wrap;gap:.3rem}
+.tag{background:var(--bg);padding:.08rem .35rem;border-radius:4px;border:1px solid var(--brd)}
+
+/* ── Events ──────────────────────── */
+.ev-list{max-height:400px;overflow-y:auto}
+.ev-item{padding:.35rem 0;border-bottom:1px solid var(--brd);display:flex;gap:.4rem;font-size:.7rem}
+.ev-item:last-child{border-bottom:none}
+.ev-icon{width:1.2rem;text-align:center;flex-shrink:0}
+.ev-body{min-width:0}
+.ev-proj{font-weight:700;color:var(--pur)}
+.ev-time{font-size:.58rem;color:var(--txt2)}
+
+/* ── Right Column ────────────────── */
+.right{display:flex;flex-direction:column;gap:.8rem}
+.monitor-row{display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--brd);font-size:.72rem}
+.monitor-row:last-child{border-bottom:none}
+.dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:.3rem}
+.dot.on{background:var(--grn)}.dot.off{background:var(--red)}
+
+/* ── Agent Card ──────────────────── */
+.agent-card{background:var(--s2);border:1px solid var(--brd);border-radius:7px;padding:.5rem;margin-bottom:.4rem}
+.agent-card:last-child{margin-bottom:0}
+.agent-name{font-weight:700;font-size:.75rem;color:var(--cyn);display:flex;align-items:center;gap:.25rem}
+.agent-meta{font-size:.62rem;color:var(--txt2);margin-top:.15rem}
+.cap-tags{display:flex;flex-wrap:wrap;gap:.2rem;margin-top:.2rem}
+.cap{font-size:.55rem;padding:.05rem .3rem;border-radius:3px;background:var(--acc);color:#fff;font-weight:600}
+
+/* ── Responsive ──────────────────── */
+@media(max-width:1200px){.main{grid-template-columns:1fr 1fr}.right{grid-column:1/-1}}
+@media(max-width:768px){.main{grid-template-columns:1fr;padding:.6rem}.hdr{flex-direction:column;gap:.3rem}.flow{flex-wrap:wrap;justify-content:center}.cmd{flex-wrap:wrap}.previews{grid-template-columns:1fr}}
+
+/* ── Scrollbar ───────────────────── */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+.empty{color:var(--txt2);font-size:.7rem;padding:.6rem;text-align:center}
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────── -->
+<div class="hdr">
+  <h1><b>Sierra</b>Bot Command Center</h1>
+  <div class="hdr-r">
+    <span class="badge"><span class="live"></span> LIVE</span>
+    <span class="badge">Uptime <span class="v" id="h-up">-</span></span>
+    <span class="badge">Tasks <span class="v" id="h-tasks">-</span></span>
+    <span class="badge">Mesh <span class="v" id="h-mesh">-</span></span>
+  </div>
+</div>
+
+<!-- ── Command Bar ─────────────── -->
+<div class="cmd">
+  <select id="cmd-proj"><option value="">Auto-detect</option></select>
+  <input id="cmd-in" type="text" placeholder="Escribe un comando natural... (ej: 'deploya plinng-web a produccion')" autocomplete="off">
+  <button class="cmd-btn" id="cmd-go" onclick="launchTask()">Launch</button>
+</div>
+<div class="cmd-fb" id="cmd-fb"></div>
+
+<!-- ── Flow Diagram ────────────── -->
+<div class="flow-section">
+  <div class="flow-title">System Flow — Como se mueven tus tareas</div>
+  <div class="flow" id="flow-diagram">
+    <!-- INPUTS -->
+    <div class="flow-col">
+      <div class="node" id="n-telegram"><div class="node-icon">💬</div><div class="node-name">Telegram</div><div class="node-where">📱 Tu movil</div></div>
+      <div class="node" id="n-whatsapp"><div class="node-icon">📲</div><div class="node-name">WhatsApp</div><div class="node-where">📱 Tu movil</div></div>
+      <div class="node" id="n-dashboard"><div class="node-icon">🖥️</div><div class="node-name">Dashboard</div><div class="node-where">🌐 Esta web</div></div>
+    </div>
+
+    <div class="flow-arrow active">→</div>
+
+    <!-- AI BRAIN -->
+    <div class="flow-col">
+      <div class="node" id="n-gemini"><div class="node-icon">🧠</div><div class="node-name">Gemini AI</div><div class="node-where where-google">☁️ Google Cloud</div><div class="node-count">Intent parsing</div></div>
+      <div class="node" id="n-voice"><div class="node-icon">🎙️</div><div class="node-name">Voice Parser</div><div class="node-where where-google">☁️ Google Cloud</div></div>
+    </div>
+
+    <div class="flow-arrow active">→</div>
+
+    <!-- ROUTER -->
+    <div class="flow-col">
+      <div class="node" id="n-router"><div class="node-icon">🔀</div><div class="node-name">Smart Router</div><div class="node-where where-mac">💻 Tu Mac</div><div class="node-count">Auto-routes</div></div>
+    </div>
+
+    <div class="flow-arrow active">→</div>
+
+    <!-- EXECUTORS -->
+    <div class="flow-col">
+      <div class="node" id="n-cursor"><div class="node-icon">⚡</div><div class="node-name">Cursor Cloud</div><div class="node-where where-cloud">☁️ Cursor Servers</div><div class="node-count" id="nc-cursor">code changes</div></div>
+      <div class="node" id="n-mesh"><div class="node-icon">🖥️</div><div class="node-name">Agent Mesh</div><div class="node-where where-mac">💻 Tu Mac</div><div class="node-count" id="nc-mesh">commands</div></div>
+      <div class="node" id="n-gemini2"><div class="node-icon">💭</div><div class="node-name">Gemini Chat</div><div class="node-where where-google">☁️ Google Cloud</div><div class="node-count">conversation</div></div>
+      <div class="node" id="n-ha"><div class="node-icon">🏠</div><div class="node-name">Home Assistant</div><div class="node-where where-mac">🐳 Docker local</div><div class="node-count">domotica</div></div>
+    </div>
+
+    <div class="flow-arrow active">→</div>
+
+    <!-- OUTPUTS -->
+    <div class="flow-col">
+      <div class="node" id="n-github"><div class="node-icon">🔀</div><div class="node-name">GitHub PRs</div><div class="node-where where-cloud">☁️ GitHub</div></div>
+      <div class="node" id="n-vercel"><div class="node-icon">▲</div><div class="node-name">Vercel Deploy</div><div class="node-where where-cloud">☁️ Vercel</div></div>
+      <div class="node" id="n-response"><div class="node-icon">📨</div><div class="node-name">Respuesta</div><div class="node-where">📱 Telegram/WA</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Live Pipeline ───────────── -->
+<div class="pipeline">
+  <div class="pipe-title">Live Pipeline — Tareas en ejecucion</div>
+  <div class="pipe-list" id="pipe-list"></div>
+</div>
+
+<!-- ── Main Grid ───────────────── -->
+<div class="main">
+
+  <!-- Col 1: Web Previews + Projects -->
+  <div>
+    <div class="card" style="margin-bottom:.8rem">
+      <div class="card-h">Web Previews <span class="c" id="prev-c">0</span></div>
+      <div class="card-b">
+        <div class="previews" id="previews"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h">Projects <span class="c" id="proj-c">0</span></div>
+      <div class="card-b"><div class="proj-grid" id="proj-grid"></div></div>
+    </div>
+  </div>
+
+  <!-- Col 2: Events + Recent Tasks -->
+  <div>
+    <div class="card" style="margin-bottom:.8rem">
+      <div class="card-h">Vercel Deploys <span class="c" id="dep-c">0</span></div>
+      <div class="card-b" id="deploys"></div>
+    </div>
+    <div class="card" style="margin-bottom:.8rem">
+      <div class="card-h">Recent Tasks <span class="c" id="recent-c">0</span></div>
+      <div class="card-b"><div class="pipe-list" id="recent-tasks" style="max-height:250px"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h">Event Feed <span class="c" id="ev-c">0</span></div>
+      <div class="card-b"><div class="ev-list" id="ev-list"></div></div>
+    </div>
+  </div>
+
+  <!-- Col 3: System + Mesh -->
+  <div class="right">
+    <div class="card">
+      <div class="card-h">Agent Mesh</div>
+      <div class="card-b" id="mesh-panel"></div>
+    </div>
+    <div class="card">
+      <div class="card-h">System Status</div>
+      <div class="card-b" id="sys-status"></div>
+    </div>
+    <div class="card">
+      <div class="card-h">Notifications</div>
+      <div class="card-b" id="notif"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='/api';
+const WEBS=[
+  {name:'Plinng',url:'https://app.plinng.com',project:'plinng-web'},
+  {name:'Divenamic',url:'https://divenamic.com',project:'divenamic'},
+  {name:'Dopelist',url:'https://dopelist.com',project:'dopelist-react-native'},
+];
+
+function fmt(s){if(!s||s<0)return'-';const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d>0?d+'d '+h+'h':h>0?h+'h '+m+'m':m+'m '+(s%60)+'s'}
+function ago(iso){if(!iso)return'';const d=Math.floor((Date.now()-new Date(iso))/1000);return d<60?'now':d<3600?Math.floor(d/60)+'m':d<86400?Math.floor(d/3600)+'h':Math.floor(d/86400)+'d'}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+
+function whereTag(action){
+  if(action==='code_change')return'<span class="pipe-where cursor">⚡ Cursor Cloud</span>';
+  if(action==='conversation'||action==='plan'||action==='query')return'<span class="pipe-where gemini">🧠 Gemini AI</span>';
+  if(action==='operation'||action==='deploy'||action==='git')return'<span class="pipe-where mac">💻 Tu Mac</span>';
+  if(action==='domotica')return'<span class="pipe-where mac">🏠 Home Assistant</span>';
+  return'<span class="pipe-where gemini">🧠 AI</span>';
+}
+
+function taskCard(t){
+  const cls=t.status==='completed'?(t.success?'ok':'fail'):t.status==='failed'?'fail':t.status==='pending'?'pending':'running';
+  const icon=cls==='ok'?'✓':cls==='fail'?'✗':cls==='running'?'⚙':'○';
+  return'<div class="pipe-item"><div class="pipe-status '+cls+'">'+icon+'</div><div class="pipe-body">'+
+    '<div class="pipe-proj">'+esc(t.project||'global')+' <span style="color:var(--txt2);font-weight:400">/ '+esc(t.action)+'</span></div>'+
+    '<div class="pipe-msg">'+esc((t.raw_message||t.prompt||'').substring(0,120))+'</div>'+
+    '<div class="pipe-meta">'+ago(t.created_at)+' ago '+whereTag(t.action)+'</div>'+
+    '</div><div></div></div>';
+}
+
+async function refresh(){
+  try{
+    const[sR,eR,tR]=await Promise.all([fetch(API+'/state'),fetch(API+'/events?limit=30'),fetch(API+'/tasks')]);
+    const state=await sR.json(),events=await eR.json(),tasks=await tR.json();
+    renderHeader(state,tasks);
+    renderFlow(state,tasks);
+    renderPipeline(tasks);
+    renderPreviews();
+    renderProjects(state.projects||[]);
+    renderDeploys(events.events||[]);
+    renderRecent(tasks);
+    renderEvents(events.events||[]);
+    renderMesh(state);
+    renderSystem(state);
+    renderNotif(state);
+  }catch(e){console.error('Refresh:',e)}
+}
+
+function renderHeader(s,t){
+  document.getElementById('h-up').textContent=fmt(s.uptime||0);
+  document.getElementById('h-tasks').textContent=(t.active||[]).length+' active';
+  document.getElementById('h-mesh').textContent=(s.mesh?.connected||0)+' agents';
+}
+
+function renderFlow(s,t){
+  const ch=s.channels||{};const m=s.mesh||{};
+  const setActive=(id,on)=>{const el=document.getElementById(id);if(el){if(on)el.classList.add('active');else el.classList.remove('active')}};
+  setActive('n-telegram',ch.telegram);
+  setActive('n-whatsapp',ch.whatsapp);
+  setActive('n-dashboard',true);
+  setActive('n-gemini',true);
+  setActive('n-router',true);
+  const active=t.active||[];
+  const hasCode=active.some(x=>x.action==='code_change');
+  const hasMesh=active.some(x=>['operation','deploy','git'].includes(x.action));
+  const hasChat=active.some(x=>['conversation','plan','query'].includes(x.action));
+  const hasDomo=active.some(x=>x.action==='domotica');
+  setActive('n-cursor',hasCode||s.cursor_enabled);
+  setActive('n-mesh',(m.connected||0)>0);
+  setActive('n-gemini2',hasChat);
+  setActive('n-ha',s.domotica_enabled);
+  document.getElementById('nc-cursor').textContent=hasCode?active.filter(x=>x.action==='code_change').length+' running':'code changes';
+  document.getElementById('nc-mesh').textContent=(m.connected||0)+' agents';
+}
+
+function renderPipeline(t){
+  const el=document.getElementById('pipe-list');
+  const active=t.active||[];
+  if(!active.length){el.innerHTML='<div class="empty">Sin tareas activas — lanza una desde la barra de arriba</div>';return}
+  el.innerHTML=active.map(taskCard).join('');
+}
+
+function renderPreviews(){
+  const el=document.getElementById('previews');
+  document.getElementById('prev-c').textContent=WEBS.length;
+  el.innerHTML=WEBS.map(w=>
+    '<div class="preview-card">'+
+      '<iframe class="preview-frame" src="'+esc(w.url)+'" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe>'+
+      '<div class="preview-info"><span class="preview-name">'+esc(w.name)+'</span><a class="preview-link" href="'+esc(w.url)+'" target="_blank">Abrir ↗</a></div>'+
+    '</div>'
+  ).join('');
+}
+
+function renderProjects(projects){
+  const el=document.getElementById('proj-grid');
+  document.getElementById('proj-c').textContent=projects.length;
+  if(!projects.length){el.innerHTML='<div class="empty">Sin proyectos</div>';return}
+  el.innerHTML=projects.map(p=>{
+    const cls=p.error?'error':p.has_uncommitted?'changes':'clean';
+    const st=p.error?'Error':p.has_uncommitted?p.uncommitted_count+' cambios':'Clean';
+    const em=p.has_uncommitted?'🟡':p.ahead>0?'🔵':'🟢';
+    return'<div class="proj-card"><div class="proj-name">'+em+' '+esc(p.name)+'</div><div class="proj-meta">'+
+      (p.branch?'<span class="tag" style="color:var(--blu)">'+esc(p.branch)+'</span>':'')+
+      '<span class="tag" style="color:var(--'+cls+')">' +st+'</span>'+
+      (p.stack?'<span class="tag">'+esc(p.stack)+'</span>':'')+
+    '</div></div>';
+  }).join('');
+}
+
+function renderDeploys(events){
+  const deps=events.filter(e=>e.type&&e.type.startsWith('deploy_'));
+  const el=document.getElementById('deploys');
+  document.getElementById('dep-c').textContent=deps.length;
+  if(!deps.length){el.innerHTML='<div class="empty">Sin deployments recientes</div>';return}
+  el.innerHTML=deps.slice(-10).reverse().map(e=>{
+    const t=new Date(e.dt).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    const url=e.metadata?.url||'';
+    const st=e.type==='deploy_success'?'ready':e.type==='deploy_failed'?'error':'building';
+    return'<div class="deploy-item"><span>▲ '+esc(e.project)+'</span><span class="deploy-status '+st+'">'+st+'</span>'+
+      (url?'<a class="deploy-url" href="'+esc(url)+'" target="_blank">↗</a>':'')+
+      '<span style="color:var(--txt2);font-size:.62rem">'+t+'</span></div>';
+  }).join('');
+}
+
+function renderRecent(t){
+  const el=document.getElementById('recent-tasks');
+  const recent=t.recent||[];
+  document.getElementById('recent-c').textContent=recent.length;
+  if(!recent.length){el.innerHTML='<div class="empty">Sin historial</div>';return}
+  el.innerHTML=recent.slice(0,8).map(taskCard).join('');
+}
+
+function renderEvents(events){
+  const el=document.getElementById('ev-list');
+  document.getElementById('ev-c').textContent=events.length;
+  if(!events.length){el.innerHTML='<div class="empty">Esperando...</div>';return}
+  el.innerHTML=events.slice().reverse().slice(0,20).map(e=>{
+    const t=new Date(e.dt).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    return'<div class="ev-item"><span class="ev-icon">'+(e.icon||'📌')+'</span><div class="ev-body">'+
+      '<span class="ev-proj">'+esc(e.project)+'</span> <span class="ev-time">'+t+'</span>'+
+      '<div style="color:var(--txt2)">'+esc(e.message)+'</div></div></div>';
+  }).join('');
+}
+
+function renderMesh(s){
+  const el=document.getElementById('mesh-panel');
+  const agents=(s.mesh?.agents)||[];
+  if(!agents.length){el.innerHTML='<div class="empty">Sin agentes conectados</div>';return}
+  el.innerHTML=agents.map(a=>{
+    const caps=(a.capabilities||[]).slice(0,6);
+    return'<div class="agent-card"><div class="agent-name"><span class="dot on"></span>'+esc(a.name||a.hostname||'agent')+'</div>'+
+      '<div class="agent-meta">'+esc(a.os||'')+' · '+( a.projects||0)+' projects · max '+(a.max_tasks||'?')+' tasks</div>'+
+      (caps.length?'<div class="cap-tags">'+caps.map(c=>'<span class="cap">'+esc(c)+'</span>').join('')+'</div>':'')+
+    '</div>';
+  }).join('');
+}
+
+function renderSystem(s){
+  const el=document.getElementById('sys-status');
+  const m=s.monitors||{};const ch=s.channels||{};
+  const row=(n,on,d)=>'<div class="monitor-row"><span><span class="dot '+(on?'on':'off')+'"></span>'+n+'</span><span style="color:var(--txt2)">'+(d||(on?'Active':'Off'))+'</span></div>';
+  el.innerHTML=
+    row('Telegram',ch.telegram,'')+row('WhatsApp',ch.whatsapp,'')+
+    row('GitHub',m.github?.running,m.github?.repos_tracked?m.github.repos_tracked+' repos':'')+
+    row('Vercel',m.vercel?.running,m.vercel?.vercel_projects?m.vercel.vercel_projects+' projects':'')+
+    row('Projects',m.projects?.running,m.projects?.total?m.projects.total+' repos':'')+
+    row('Cursor API',s.cursor_enabled,'')+
+    row('Domotica',s.domotica_enabled,'');
+}
+
+function renderNotif(s){
+  const el=document.getElementById('notif');
+  const n=s.notifications||{};
+  const row=(nm,on,d)=>'<div class="monitor-row"><span><span class="dot '+(on?'on':'off')+'"></span>'+nm+'</span><span style="color:var(--txt2)">'+d+'</span></div>';
+  el.innerHTML=row('Enabled',n.enabled,'')+row('Telegram',n.telegram_configured,n.chat_id?'Chat '+n.chat_id:'')+row('WhatsApp',n.whatsapp_configured,n.wa_number?'+'+n.wa_number:'');
+}
+
+// ── Command Bar ──────────────────
+async function loadProjects(){
+  try{const r=await fetch(API+'/registry');const d=await r.json();const s=document.getElementById('cmd-proj');
+    (d.projects||[]).forEach(p=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;s.appendChild(o)});
+  }catch(e){}}
+
+async function launchTask(){
+  const input=document.getElementById('cmd-in');const proj=document.getElementById('cmd-proj').value;
+  const btn=document.getElementById('cmd-go');const fb=document.getElementById('cmd-fb');
+  const msg=input.value.trim();if(!msg){input.focus();return}
+  btn.disabled=true;btn.textContent='...';fb.className='cmd-fb show info';fb.textContent='Parsing & launching...';
+  try{
+    const body={message:msg};if(proj)body.project=proj;
+    const res=await fetch(API+'/tasks/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(res.ok){fb.className='cmd-fb show ok';fb.textContent='Launched: '+data.action+' on '+data.project+' ['+data.task_id.substring(0,8)+']';input.value='';setTimeout(refresh,1000)}
+    else{fb.className='cmd-fb show err';fb.textContent='Error: '+(data.error||'Unknown')}
+  }catch(e){fb.className='cmd-fb show err';fb.textContent='Network error: '+e.message}
+  btn.disabled=false;btn.textContent='Launch';setTimeout(()=>{fb.className='cmd-fb'},6000);
+}
+document.getElementById('cmd-in').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();launchTask()}});
+
+// ── Init ─────────────────────────
+loadProjects();refresh();setInterval(refresh,5000);
+</script>
+</body>
+</html>

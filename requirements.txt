@@ -1,0 +1,31 @@
+# Telegram Bot
+python-telegram-bot[webhooks]==22.0
+
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# AI (Gemini via REST/httpx – no SDK needed)
+# anthropic is optional, only needed if using Claude Code executor prompts
+anthropic==0.43.0
+
+# HTTP Client
+httpx==0.28.1
+
+# WebSocket
+websockets==14.1
+
+# Database
+aiosqlite==0.20.0
+
+# Config
+pyyaml==6.0.2
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# Process management
+python-dotenv==1.0.1
+
+# Dev
+pytest==8.3.4
+pytest-asyncio==0.25.0

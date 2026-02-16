@@ -1,0 +1,45 @@
+# Docker Compose – Home Assistant + MQTT broker
+#
+# Corre en cualquier PC siempre encendido (Mac/Linux).
+# HA integra: Google Home, Alexa, luces, altavoces, y mucho mas.
+#
+# Uso:
+#   docker compose up -d          # arrancar
+#   docker compose logs -f ha     # ver logs de HA
+#   docker compose down           # parar
+#
+# Acceso: http://localhost:8123 (Home Assistant dashboard)
+
+services:
+  # ── Home Assistant ──────────────────────────────────────────────────────
+  ha:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    privileged: true
+    network_mode: host  # needed for device discovery (Google Home, Alexa, etc.)
+    volumes:
+      - ./ha-config:/config
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Europe/Madrid
+    depends_on:
+      - mqtt
+
+  # ── MQTT Broker (Mosquitto) ─────────────────────────────────────────────
+  # Used by: sensors, ESP devices, Zigbee2MQTT, etc.
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"   # MQTT
+      - "9001:9001"   # WebSocket (for web-based MQTT clients)
+    volumes:
+      - ./mqtt-config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mqtt-data:/mosquitto/data
+      - mqtt-logs:/mosquitto/log
+
+volumes:
+  mqtt-data:
+  mqtt-logs:
