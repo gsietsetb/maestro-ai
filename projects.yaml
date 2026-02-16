@@ -109,3 +109,42 @@ projects:
       dev: "npx expo start"
       build: "eas build"
     aliases: ["dopelist", "dope"]
+
+  cursor-orchestrator:
+    path: /Users/guillermosierraaiello/dev/cursor-orchestrator
+    repo: https://github.com/gsietsetb/cursor-orchestrator
+    stack: fastapi
+    agents_md: false
+    commands:
+      dev: "python -m src.main --polling"
+      test: "python -m pytest tests/ -v"
+      start: "bash start.sh"
+    aliases: ["orchestrator", "nerve", "brain", "sistema"]
+
+  watch-companion:
+    path: /Users/guillermosierraaiello/dev/watch-companion
+    repo: https://github.com/gsietsetb/watch-companion
+    stack: swiftui
+    agents_md: false
+    commands:
+      build: "xcodebuild -scheme WatchCompanion"
+    aliases: ["watch", "reloj", "wrist"]
+
+  music-ai:
+    path: /Users/guillermosierraaiello/dev/music-ai
+    repo: https://github.com/gsietsetb/music-ai
+    stack: fastapi
+    agents_md: false
+    commands:
+      dev: "uvicorn src.api.main:app --reload --port 8001"
+      test: "python -m pytest tests/ -v"
+    aliases: ["music", "musica", "canto", "singing", "vocal"]
+
+  ella-neo-controller:
+    path: /Users/guillermosierraaiello/dev/ella-neo-controller
+    repo: https://github.com/gsietsetb/ella-neo-controller
+    stack: vanilla-js
+    agents_md: false
+    commands:
+      dev: "python -m http.server 8080"
+    aliases: ["ella", "neo", "ble", "intimate"]

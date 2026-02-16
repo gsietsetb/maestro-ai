@@ -16,6 +16,11 @@ from typing import Awaitable, Callable, Optional
 
 from src.orchestrator.intent_parser import ParsedIntent
 from src.orchestrator.project_registry import ProjectRegistry
+from src.orchestrator.slash_commands import (
+    DELEGATE_SENTINEL,
+    CommandResult,
+    SlashCommandParser,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +53,7 @@ class ActionRouter:
         ha_executor=None,
         improvement_loop=None,
         gemini=None,
+        slash_parser: SlashCommandParser | None = None,
     ):
         self._registry = registry
         self._cursor = cursor_executor
@@ -55,6 +61,7 @@ class ActionRouter:
         self._ha = ha_executor   # HomeAssistantExecutor
         self._improver = improvement_loop  # ImprovementLoop
         self._gemini = gemini    # GeminiProvider for conversational fallback
+        self._slash = slash_parser  # SlashCommandParser (fast, no LLM)
 
     async def route(
         self,
@@ -109,6 +116,56 @@ class ActionRouter:
 
         # ── Unknown → treat as conversation ───────────────────────────────
         return await self._handle_conversation(intent, project_info, project_name)
+
+    # ── Slash commands (fast path, no LLM) ────────────────────────────────
+
+    async def try_slash_command(
+        self, message: str, task_id: str
+    ) -> ExecutionResult | None:
+        """Try to handle the message as a slash command.
+
+        Returns:
+            ExecutionResult if handled (including delegate-to-NLU signal).
+            None if the message is not a slash command – caller should use
+            the Gemini intent parser.
+        """
+        if not self._slash:
+            return None
+
+        cmd_result: CommandResult | None = await self._slash.execute(message)
+        if cmd_result is None:
+            return None
+
+        # Special case: /run delegates text back to the NLU intent parser
+        if cmd_result.status == "delegate":
+            return ExecutionResult(
+                success=True,
+                output=cmd_result.summary,
+                agent_id=DELEGATE_SENTINEL,
+            )
+
+        return self._command_result_to_execution(cmd_result)
+
+    @staticmethod
+    def _command_result_to_execution(cmd: CommandResult) -> ExecutionResult:
+        """Convert a slash CommandResult into an ExecutionResult."""
+        parts: list[str] = [cmd.summary]
+
+        if cmd.artifacts:
+            parts.append("")
+            for a in cmd.artifacts:
+                if a.get("type") == "link":
+                    parts.append(f"  - {a.get('title', '')}: {a.get('url', '')}")
+                else:
+                    parts.append(f"  - {a}")
+
+        if cmd.next_actions:
+            parts.append(f"\n\U0001f4a1 {' | '.join(cmd.next_actions)}")
+
+        return ExecutionResult(
+            success=cmd.status != "error",
+            output="\n".join(parts),
+        )
 
     # ── Domotica (Home Assistant) ─────────────────────────────────────────
 

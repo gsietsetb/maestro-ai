@@ -42,6 +42,7 @@ from src.executors.homeassistant_executor import HomeAssistantExecutor
 from src.orchestrator.intent_parser import IntentParser, ParsedIntent
 from src.orchestrator.project_registry import ProjectRegistry
 from src.orchestrator.router import ActionRouter
+from src.orchestrator.slash_commands import DELEGATE_SENTINEL
 from src.orchestrator.task_tracker import TaskTracker
 
 if TYPE_CHECKING:
@@ -154,29 +155,62 @@ async def cmd_mesh(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-# ── Message handler (natural language) ───────────────────────────────────────
+# ── Slash command handler (fast path, no LLM) ────────────────────────────────
 
 
 @authorized
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle free-text messages – parse intent and route."""
+async def handle_slash_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle extended slash commands not registered as Telegram commands.
+
+    This is a catch-all for /commands that don't match /start, /help, etc.
+    Routes through SlashCommandParser first (fast, deterministic, no LLM cost).
+    If the command is /run, delegates to the NLU intent parser.
+    """
     text = update.effective_message.text
     if not text:
         return
 
-    # Auto-detect and store chat_id for proactive notifications
-    notifier: ProactiveNotifier | None = context.bot_data.get("notifier")
-    if notifier and update.effective_chat:
-        chat_id = str(update.effective_chat.id)
-        if not notifier._tg_chat_id or notifier._tg_chat_id != chat_id:
-            notifier.set_telegram_chat_id(chat_id)
+    router: ActionRouter = context.bot_data["router"]
+    tracker: TaskTracker = context.bot_data["tracker"]
+    task_id = str(uuid.uuid4())
 
+    # Try the slash command system
+    result = await router.try_slash_command(text, task_id)
+
+    if result is None:
+        # Not recognized by slash parser – send helpful message
+        await update.effective_message.reply_text(
+            "Comando no reconocido. Usa /help para ver los comandos disponibles."
+        )
+        return
+
+    # Special case: /run delegates to the NLU intent parser
+    if result.agent_id == DELEGATE_SENTINEL:
+        delegated_text = result.output
+        await _process_as_natural_language(update, context, delegated_text)
+        return
+
+    # Send the slash command result to the user
+    output = result.output
+    if len(output) > 4000:
+        output = output[:4000] + "\n... (truncado)"
+    await update.effective_message.reply_text(output)
+
+
+async def _process_as_natural_language(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    text: str,
+) -> None:
+    """Parse text through the NLU intent parser and execute.
+
+    Shared logic used by both handle_message and handle_slash_command (for /run).
+    """
     parser: IntentParser = context.bot_data["parser"]
     registry: ProjectRegistry = context.bot_data["registry"]
     router: ActionRouter = context.bot_data["router"]
     tracker: TaskTracker = context.bot_data["tracker"]
 
-    # Parse intent (with conversation history for context)
     user_id = update.effective_user.id if update.effective_user else None
     try:
         intent: ParsedIntent = await parser.parse(text, registry.project_names(), user_id=user_id)
@@ -210,6 +244,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # Execute directly
     await _execute_intent(update, context, intent, router, tracker)
+
+
+# ── Message handler (natural language) ───────────────────────────────────────
+
+
+@authorized
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle free-text messages – parse intent and route."""
+    text = update.effective_message.text
+    if not text:
+        return
+
+    # Auto-detect and store chat_id for proactive notifications
+    notifier: ProactiveNotifier | None = context.bot_data.get("notifier")
+    if notifier and update.effective_chat:
+        chat_id = str(update.effective_chat.id)
+        if not notifier._tg_chat_id or notifier._tg_chat_id != chat_id:
+            notifier.set_telegram_chat_id(chat_id)
+
+    await _process_as_natural_language(update, context, text)
 
 
 async def _summarize_output(output: str, action: str, gemini: GeminiProvider) -> str:
@@ -780,6 +834,9 @@ def register_handlers(app: Application) -> None:
 
     # Callback queries (inline keyboards)
     app.add_handler(CallbackQueryHandler(handle_callback))
+
+    # Slash commands (catch-all for /commands not registered above – fast, no LLM)
+    app.add_handler(MessageHandler(filters.COMMAND, handle_slash_command))
 
     # Media handlers (order matters – more specific first)
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))

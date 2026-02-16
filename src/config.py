@@ -57,6 +57,12 @@ class Settings(BaseSettings):
     wa_bridge_url: str = Field(default="http://localhost:3001", description="WA bridge HTTP URL")
     wa_bridge_enabled: bool = Field(default=True, description="Enable WA Web bridge")
 
+    # ── Music AI Microservice ──────────────────────────────────────────────
+    music_ai_url: str = Field(default="http://localhost:8001", description="Music AI service URL")
+
+    # ── Watch Companion ────────────────────────────────────────────────────
+    watch_enabled: bool = Field(default=True, description="Enable Watch command queue")
+
     # ── Projects ──────────────────────────────────────────────────────────
     projects_file: str = Field(default="projects.yaml", description="Path to projects.yaml")
 
@@ -121,6 +127,10 @@ class Settings(BaseSettings):
     @property
     def ha_enabled(self) -> bool:
         return bool(self.ha_url and self.ha_token)
+
+    @property
+    def music_ai_enabled(self) -> bool:
+        return bool(self.music_ai_url)
 
     @property
     def github_enabled(self) -> bool:
