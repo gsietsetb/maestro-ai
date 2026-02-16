@@ -189,9 +189,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 .empty{color:var(--txt2);font-size:.65rem;padding:.5rem;text-align:center}
 .model-tag{font-size:.5rem;padding:.08rem .3rem;border-radius:3px;font-weight:600;display:inline-flex;align-items:center;gap:.15rem}
 .model-tag.opus{background:#7c3aed22;color:#c4b5fd}.model-tag.gemini{background:#fbbf2422;color:#fbbf24}.model-tag.groq{background:#00d2a022;color:#00d2a0}
+
+/* ── Auth Overlay ────────────────── */
+.auth-overlay{position:fixed;inset:0;background:rgba(6,6,11,.85);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.auth-overlay.hidden{display:none}
+.auth-box{background:var(--s1);border:1px solid var(--brd);border-radius:14px;padding:2rem;width:340px;text-align:center}
+.auth-box h2{font-size:1.1rem;font-weight:800;margin-bottom:.3rem}.auth-box h2 b{color:var(--acc)}
+.auth-box p{font-size:.72rem;color:var(--txt2);margin-bottom:1rem}
+.auth-box input{width:100%;background:var(--s2);color:var(--txt);border:1px solid var(--brd);border-radius:8px;padding:.5rem .8rem;font-size:.85rem;outline:none;text-align:center;letter-spacing:.15em;font-family:inherit;margin-bottom:.6rem}
+.auth-box input:focus{border-color:var(--acc)}
+.auth-box button{width:100%;background:var(--acc);color:#fff;border:none;border-radius:8px;padding:.5rem;font-size:.82rem;font-weight:700;cursor:pointer;transition:.2s}
+.auth-box button:hover{background:var(--acc2)}
+.auth-err{color:var(--red);font-size:.65rem;margin-top:.4rem;min-height:1rem}
 </style>
 </head>
 <body>
+
+<!-- ── Auth Modal (only when launching) ── -->
+<div class="auth-overlay hidden" id="auth-modal">
+  <div class="auth-box">
+    <h2><b>Autorizacion</b></h2>
+    <p>Password requerido para ejecutar acciones</p>
+    <input type="password" id="auth-pw" placeholder="Password" autocomplete="off">
+    <button onclick="confirmAuth()">Autorizar</button>
+    <div class="auth-err" id="auth-err"></div>
+    <div style="margin-top:.5rem"><span style="font-size:.6rem;color:var(--txt2);cursor:pointer" onclick="cancelAuth()">Cancelar</span></div>
+  </div>
+</div>
 
 <!-- ── Header ──────────────────── -->
 <div class="hdr">
@@ -230,9 +254,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 <div class="tabs">
   <div class="tab active" data-tab="overview">Overview</div>
   <div class="tab" data-tab="todos">Roadmap & TODOs</div>
+  <div class="tab" data-tab="compare">SierraBot vs Others</div>
   <div class="tab" data-tab="chatbot">Divenamic Bot</div>
+  <div class="tab" data-tab="ollama">Ollama Local</div>
   <div class="tab" data-tab="deploys">Deploys & Previews</div>
   <div class="tab" data-tab="projects">Projects</div>
+  <div class="tab" data-tab="feedback">Feedback</div>
   <div class="tab" data-tab="events">Events</div>
 </div>
 
@@ -370,6 +397,98 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
   </div>
 </div>
 
+<!-- ═══ TAB: Compare ═════════════ -->
+<div class="tab-panel" id="tab-compare">
+  <div style="padding:.8rem 1.2rem">
+    <div class="section-title">SierraBot vs Accomplish vs OpenClaw</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.68rem">
+        <thead><tr style="background:var(--s2);text-align:left">
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Feature</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd);color:var(--acc2)">SierraBot</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Accomplish</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">OpenClaw</th>
+        </tr></thead>
+        <tbody id="compare-table"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:.8rem;font-size:.62rem;color:var(--txt2)">
+      SierraBot es tu orchestrator privado. Accomplish es desktop-only. OpenClaw tiene 187K stars en GitHub.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: Ollama Local ════════ -->
+<div class="tab-panel" id="tab-ollama">
+  <div class="grid-2" style="padding-top:.6rem">
+    <div class="card">
+      <div class="card-h">Ollama Local LLM <span class="c" id="ollama-status">checking...</span></div>
+      <div class="card-b">
+        <div style="margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem" id="ollama-models"></div>
+        <div style="margin-bottom:.5rem"><select id="ollama-select" style="background:var(--s2);color:var(--txt);border:1px solid var(--brd);border-radius:6px;padding:.2rem .5rem;font-size:.65rem"></select></div>
+        <div class="chatbot-embed">
+          <div class="chatbot-header"><span>Chat Local (privado, sin cloud)</span><span style="font-size:.5rem;color:var(--txt2)" id="ollama-model-name">-</span></div>
+          <div class="chatbot-msgs" id="ollama-msgs">
+            <div class="chatbot-msg bot">Ollama local model. Todo se ejecuta en tu Mac, nada sale a internet.</div>
+          </div>
+          <div class="chatbot-input">
+            <input id="ollama-in" placeholder="Chat con modelo local..." autocomplete="off">
+            <button onclick="sendOllama()">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:.6rem">
+        <div class="card-h">Por que Ollama?</div>
+        <div class="card-b" style="font-size:.65rem;color:var(--txt2);line-height:1.5">
+          <p>100% privado — nada sale de tu Mac</p>
+          <p>Sin costes de API — corre gratis localmente</p>
+          <p>Offline — funciona sin internet</p>
+          <p>Rapido — qwen3:4b responde en ~2s</p>
+          <p style="margin-top:.4rem;color:var(--txt)">Ideal para tareas sensibles, clasificacion rapida, y como fallback cuando las APIs cloud estan caidas.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h">Ollama vs Cloud</div>
+        <div class="card-b">
+          <div class="monitor-row"><span>Privacidad</span><span style="color:var(--grn)">100% local</span></div>
+          <div class="monitor-row"><span>Coste</span><span style="color:var(--grn)">Gratis</span></div>
+          <div class="monitor-row"><span>Velocidad</span><span style="color:var(--ylw)">2-5s</span></div>
+          <div class="monitor-row"><span>Calidad</span><span style="color:var(--ylw)">Buena (4B params)</span></div>
+          <div class="monitor-row"><span>Offline</span><span style="color:var(--grn)">Si</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: Feedback ════════════ -->
+<div class="tab-panel" id="tab-feedback">
+  <div class="grid-2" style="padding-top:.6rem">
+    <div class="card">
+      <div class="card-h">Enviar Feedback</div>
+      <div class="card-b">
+        <div style="margin-bottom:.4rem">
+          <div style="display:flex;gap:.3rem;margin-bottom:.4rem" id="fb-btns">
+            <button class="cmd-btn" style="font-size:.7rem" onclick="setFbRating('positive')">Bien</button>
+            <button class="cmd-btn" style="font-size:.7rem;background:var(--red)" onclick="setFbRating('negative')">Mal</button>
+            <button class="cmd-btn" style="font-size:.7rem;background:var(--ylw);color:#000" onclick="setFbRating('suggestion')">Idea</button>
+          </div>
+          <input id="fb-task" placeholder="Task ID (opcional)" style="width:100%;background:var(--s2);border:1px solid var(--brd);border-radius:6px;padding:.3rem .5rem;color:var(--txt);font-size:.65rem;margin-bottom:.3rem;outline:none">
+          <textarea id="fb-comment" placeholder="Tu comentario..." style="width:100%;background:var(--s2);border:1px solid var(--brd);border-radius:6px;padding:.3rem .5rem;color:var(--txt);font-size:.65rem;min-height:80px;resize:vertical;outline:none;font-family:inherit"></textarea>
+          <button class="cmd-btn" style="margin-top:.3rem;width:100%" onclick="sendFeedback()">Enviar Feedback</button>
+          <div id="fb-msg" style="font-size:.6rem;margin-top:.3rem;min-height:1rem"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h">Feedback Reciente <span class="c" id="fb-count">0</span></div>
+      <div class="card-b"><div id="fb-list" style="max-height:400px;overflow-y:auto"></div></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ TAB: Events ══════════════ -->
 <div class="tab-panel" id="tab-events">
   <div class="grid-2" style="padding-top:.6rem">
@@ -385,6 +504,157 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 </div>
 
 <script>
+// ── Auth ─────────────────────────
+/* ── Auth: solo para acciones, dashboard visible siempre ─── */
+let _authResolve=null;
+function getAuth(){return sessionStorage.getItem('sb_auth')||''}
+function requireAuth(){
+  const saved=getAuth();
+  if(saved)return Promise.resolve(saved);
+  return new Promise((res)=>{
+    _authResolve=res;
+    document.getElementById('auth-pw').value='';
+    document.getElementById('auth-err').textContent='';
+    document.getElementById('auth-modal').classList.remove('hidden');
+  });
+}
+function confirmAuth(){
+  const pw=document.getElementById('auth-pw').value;
+  if(!pw){document.getElementById('auth-err').textContent='Escribe el password';return}
+  sessionStorage.setItem('sb_auth',pw);
+  document.getElementById('auth-modal').classList.add('hidden');
+  if(_authResolve){_authResolve(pw);_authResolve=null}
+}
+function cancelAuth(){
+  document.getElementById('auth-modal').classList.add('hidden');
+  if(_authResolve){_authResolve(null);_authResolve=null}
+}
+document.getElementById('auth-pw').addEventListener('keydown',e=>{if(e.key==='Enter')confirmAuth()});
+
+/* ── Comparison table data ────────────────────────────── */
+const compareData=[
+  ["Dashboard visual", "Si (flow+mesh)", "Basico", "Si"],
+  ["Accesible global (tunnel)", "Si (Cloudflare)", "No (local)", "Si (multi-plat)"],
+  ["Telegram/WhatsApp", "Si ambos", "No", "Si (13+ plat)"],
+  ["Apple Watch", "En desarrollo", "No", "Si (Device Nodes)"],
+  ["Alexa/Google Home", "En desarrollo", "No", "No nativo"],
+  ["Browser Use (automacion web)", "Pendiente", "Si", "Si"],
+  ["Modelo local (Ollama)", "Si (qwen3:4b)", "No", "Si"],
+  ["Cloud AI (Opus/Gemini/GPT)", "Si multi-model", "GPT/Claude", "Si multi-model"],
+  ["Cursor agent (code changes)", "Si (cloud+local)", "No", "No"],
+  ["Approval workflow", "Parcial", "Si (visual)", "No"],
+  ["Subagent orchestration", "Si", "No", "Si"],
+  ["Cron / scheduling", "Basico", "No", "Si"],
+  ["Heartbeat monitoring", "Si", "No", "Si"],
+  ["Skills marketplace", "No (manual)", "No", "Si (ClawHub)"],
+  ["Home Assistant", "Si", "No", "No nativo"],
+  ["Vercel/Supabase integration", "Si", "No", "No nativo"],
+  ["Multi-proyecto simultáneo", "Si (14 proyectos)", "No", "Limitado"],
+  ["Voice interaction", "Pendiente", "No", "Si"],
+  ["Feedback loop", "Si", "No", "No nativo"],
+  ["Open source", "Privado", "Si", "Si (187K stars)"],
+  ["Coste", "Gratis (self-host)", "Gratis", "Gratis"],
+  ["Offline mode", "Si (via Ollama)", "Parcial", "Si"],
+];
+function renderCompare(){
+  const tb=document.getElementById('compare-table');
+  if(!tb)return;
+  const icon=(v)=>{
+    v=v.toLowerCase();
+    if(v.startsWith('si'))return '<span style="color:var(--grn)">&#10004;</span> '+v.slice(2).trim();
+    if(v.startsWith('no'))return '<span style="color:var(--red)">&#10008;</span> '+v.slice(2).trim();
+    if(v.includes('pendiente')||v.includes('desarrollo')||v.includes('parcial')||v.includes('basico')||v.includes('limitado'))return '<span style="color:var(--ylw)">&#9673;</span> '+v;
+    return v;
+  };
+  tb.innerHTML=compareData.map(r=>`<tr>
+    <td style="padding:.3rem .5rem;border:1px solid var(--brd);font-weight:600">${r[0]}</td>
+    <td style="padding:.3rem .5rem;border:1px solid var(--brd);background:rgba(139,92,246,.06)">${icon(r[1])}</td>
+    <td style="padding:.3rem .5rem;border:1px solid var(--brd)">${icon(r[2])}</td>
+    <td style="padding:.3rem .5rem;border:1px solid var(--brd)">${icon(r[3])}</td>
+  </tr>`).join('');
+}
+renderCompare();
+
+/* ── Ollama Chat ──────────────────────────────────────── */
+async function checkOllama(){
+  try{
+    const r=await fetch('/api/ollama/status');
+    const d=await r.json();
+    const el=document.getElementById('ollama-status');
+    const mn=document.getElementById('ollama-model-name');
+    const ml=document.getElementById('ollama-models');
+    const sel=document.getElementById('ollama-select');
+    if(d.online){
+      el.textContent='ONLINE';el.style.color='var(--grn)';
+      mn.textContent=d.default;
+      ml.innerHTML=d.models.map(m=>`<span class="tag" style="margin-right:.2rem">${m}</span>`).join('');
+      if(sel.options.length===0){
+        d.models.forEach(m=>{const o=document.createElement('option');o.value=m;o.text=m;sel.add(o)});
+      }
+    }else{
+      el.textContent='OFFLINE';el.style.color='var(--red)';
+      ml.innerHTML='<span style="font-size:.6rem;color:var(--red)">Ollama no esta corriendo. Ejecuta: open -a Ollama</span>';
+    }
+  }catch(e){}
+}
+checkOllama();setInterval(checkOllama,15000);
+
+let _ollamaId=0;
+async function sendOllama(){
+  const inp=document.getElementById('ollama-in');
+  const msg=inp.value.trim();if(!msg)return;
+  const model=document.getElementById('ollama-select').value||'qwen3:4b';
+  const msgs=document.getElementById('ollama-msgs');
+  const tid='ollama-r-'+(++_ollamaId);
+  msgs.innerHTML+=`<div class="chatbot-msg user">${msg}</div>`;
+  inp.value='';msgs.scrollTop=msgs.scrollHeight;
+  msgs.innerHTML+=`<div class="chatbot-msg bot" id="${tid}" style="opacity:.5">Pensando (${model})...</div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  try{
+    const r=await fetch('/api/ollama/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,model})});
+    const d=await r.json();
+    const el=document.getElementById(tid);
+    if(d.response){el.textContent=d.response;el.style.opacity='1'}
+    else{el.textContent='Error: '+(d.error||'sin respuesta');el.style.color='var(--red)';el.style.opacity='1'}
+  }catch(e){
+    const el=document.getElementById(tid);
+    if(el){el.textContent='Error de conexion';el.style.color='var(--red)';el.style.opacity='1'}
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+}
+document.getElementById('ollama-in').addEventListener('keydown',e=>{if(e.key==='Enter')sendOllama()});
+
+/* ── Feedback ─────────────────────────────────────────── */
+let _fbRating='suggestion';
+function setFbRating(r){_fbRating=r;document.querySelectorAll('#fb-btns button').forEach(b=>b.style.opacity='.4');event.target.style.opacity='1'}
+async function sendFeedback(){
+  const comment=document.getElementById('fb-comment').value.trim();
+  const task_id=document.getElementById('fb-task').value.trim();
+  if(!comment){document.getElementById('fb-msg').textContent='Escribe un comentario';return}
+  try{
+    const r=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rating:_fbRating,comment,task_id})});
+    const d=await r.json();
+    document.getElementById('fb-msg').textContent='Feedback enviado (#'+d.total+')';
+    document.getElementById('fb-msg').style.color='var(--grn)';
+    document.getElementById('fb-comment').value='';
+    loadFeedback();
+  }catch(e){document.getElementById('fb-msg').textContent='Error';document.getElementById('fb-msg').style.color='var(--red)'}
+}
+async function loadFeedback(){
+  try{
+    const r=await fetch('/api/feedback');const d=await r.json();
+    document.getElementById('fb-count').textContent=d.total;
+    const list=document.getElementById('fb-list');
+    if(!d.feedback.length){list.innerHTML='<span style="font-size:.6rem;color:var(--txt2)">Sin feedback todavia</span>';return}
+    list.innerHTML=d.feedback.reverse().map(f=>{
+      const icon=f.rating==='positive'?'<span style="color:var(--grn)">&#10004;</span>':f.rating==='negative'?'<span style="color:var(--red)">&#10008;</span>':'<span style="color:var(--ylw)">&#9733;</span>';
+      const ts=new Date(f.ts*1000).toLocaleTimeString();
+      return `<div style="padding:.25rem 0;border-bottom:1px solid var(--brd);font-size:.62rem">${icon} <b>${f.rating}</b> ${f.task_id?'['+f.task_id+']':''} ${f.comment} <span style="color:var(--txt2)">${ts}</span></div>`;
+    }).join('');
+  }catch(e){}
+}
+loadFeedback();
+
 const API='/api';
 const WEBS=[
   {name:'Plinng',url:'https://app.plinng.com',project:'plinng-web'},
@@ -521,12 +791,14 @@ function renderTodos(){
 
 async function launchTodo(id){
   const todo=TODOS.find(t=>t.id===id);if(!todo)return;
+  const pw=await requireAuth();if(!pw)return;
   const btn=event.target;btn.disabled=true;btn.textContent='...';
   try{
-    const body={message:todo.action};if(todo.project)body.project=todo.project;
+    const body={message:todo.action,password:pw};if(todo.project)body.project=todo.project;
     const res=await fetch(API+'/tasks/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await res.json();
     if(res.ok){btn.textContent='Launched!';btn.style.background='var(--grn)';setTimeout(refresh,1000)}
+    else if(res.status===403){sessionStorage.removeItem('sb_auth');btn.textContent='Wrong pw';btn.style.background='var(--red)'}
     else{btn.textContent='Error';btn.style.background='var(--red)'}
   }catch(e){btn.textContent='Error';btn.style.background='var(--red)'}
   setTimeout(()=>{btn.disabled=false;btn.textContent='Launch';btn.style.background=''},3000);
@@ -651,12 +923,14 @@ async function launchTask(){
   const input=document.getElementById('cmd-in');const proj=document.getElementById('cmd-proj').value;
   const btn=document.getElementById('cmd-go');const fb=document.getElementById('cmd-fb');
   const msg=input.value.trim();if(!msg){input.focus();return}
+  const pw=await requireAuth();if(!pw){return}
   btn.disabled=true;btn.textContent='...';fb.className='cmd-fb show info';fb.textContent='Parsing & launching...';
   try{
-    const body={message:msg};if(proj)body.project=proj;
+    const body={message:msg,password:pw};if(proj)body.project=proj;
     const res=await fetch(API+'/tasks/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await res.json();
     if(res.ok){fb.className='cmd-fb show ok';fb.textContent='Launched: '+data.action+' on '+(data.project||'global')+' ['+data.task_id.substring(0,8)+']';input.value='';setTimeout(refresh,1000)}
+    else if(res.status===403){sessionStorage.removeItem('sb_auth');fb.className='cmd-fb show err';fb.textContent='Password incorrecto. Intenta de nuevo.'}
     else{fb.className='cmd-fb show err';fb.textContent='Error: '+(data.error||'Unknown')}
   }catch(e){fb.className='cmd-fb show err';fb.textContent='Network error: '+e.message}
   btn.disabled=false;btn.textContent='Launch';setTimeout(()=>{fb.className='cmd-fb'},6000);

@@ -1058,10 +1058,14 @@ async def api_tasks(request: Request, limit: int = 30):
 # ── Interactive Task Launch ───────────────────────────────────────────────────
 
 
+DASHBOARD_PASSWORD = "rotor"
+
+
 class TaskLaunchRequest(BaseModel):
     """Request body for launching a task from the dashboard."""
     message: str
     project: str | None = None
+    password: str | None = None
 
 
 async def _execute_task_bg(
@@ -1110,7 +1114,13 @@ async def _execute_task_bg(
 
 @router.post("/api/tasks/launch")
 async def api_launch_task(request: Request, body: TaskLaunchRequest):
-    """Launch a new task from the dashboard – same flow as Telegram."""
+    """Launch a new task from the dashboard – requires password."""
+    if not body.password or body.password != DASHBOARD_PASSWORD:
+        return JSONResponse(
+            status_code=403,
+            content={"error": "Password incorrecto. Acceso denegado."},
+        )
+
     components = request.app.state.components
     parser = components["parser"]
     registry = components["registry"]
@@ -1183,3 +1193,77 @@ async def api_registry(request: Request):
             for name, info in all_projects.items()
         ]
     }
+
+
+# ── Ollama Local LLM ─────────────────────────────────────────────────────────
+
+
+@router.get("/api/ollama/status")
+async def api_ollama_status():
+    """Check Ollama status and available models."""
+    import httpx
+
+    from src.config import get_settings
+    s = get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=3) as c:
+            r = await c.get(f"{s.ollama_url}/api/tags")
+            data = r.json()
+            models = [m["name"] for m in data.get("models", [])]
+            return {"online": True, "url": s.ollama_url, "models": models, "default": s.ollama_model}
+    except Exception:
+        return {"online": False, "url": s.ollama_url, "models": [], "default": s.ollama_model}
+
+
+@router.post("/api/ollama/chat")
+async def api_ollama_chat(request: Request, body: dict):
+    """Chat with local Ollama model (no password needed – local only)."""
+    import httpx
+
+    from src.config import get_settings
+    s = get_settings()
+    msg = body.get("message", "")
+    model = body.get("model", s.ollama_model)
+    if not msg:
+        return {"error": "No message"}
+    try:
+        async with httpx.AsyncClient(timeout=120) as c:
+            r = await c.post(f"{s.ollama_url}/api/generate", json={
+                "model": model, "prompt": msg, "stream": False,
+                "options": {"num_predict": 512},
+            })
+            data = r.json()
+            resp = data.get("response", "")
+            thinking = data.get("thinking", "")
+            return {"response": resp, "thinking": thinking[:200] if thinking else "", "model": model}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ── Feedback ──────────────────────────────────────────────────────────────────
+
+_feedback_store: list[dict] = []
+
+
+class FeedbackRequest(BaseModel):
+    task_id: str = ""
+    rating: str  # positive, negative, suggestion
+    comment: str = ""
+
+
+@router.post("/api/feedback")
+async def api_feedback(body: FeedbackRequest):
+    """Submit feedback on a task or the system."""
+    _feedback_store.append({
+        "task_id": body.task_id,
+        "rating": body.rating,
+        "comment": body.comment,
+        "ts": time.time(),
+    })
+    return {"ok": True, "total": len(_feedback_store)}
+
+
+@router.get("/api/feedback")
+async def api_get_feedback():
+    """Get all feedback."""
+    return {"feedback": _feedback_store[-50:], "total": len(_feedback_store)}

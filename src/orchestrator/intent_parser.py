@@ -36,16 +36,27 @@ classify natural-language messages from a developer into structured JSON actions
 
 Available projects: {projects}
 
+CRITICAL: This user is a BUILDER. When they describe an idea, feature, or task, \
+they want it EXECUTED, not discussed. Default to ACTION over conversation.
+
 Rules:
 - Match project names by name OR alias. "la API" → "plinng-api-MARKETIQ", "expo" → "plinng-expo".
 - "tests" / "test" → action "operation", command "test".
 - "deploy" / "desplegar" → action "deploy".
 - Question about a specific project's code/state → "query" (with project set).
-- General question, opinion, advice, debugging help, architecture → "conversation".
 - Make code changes, add features, fix bugs, refactor → "code_change".
-- Plan something before doing it → "plan".
 - Force push or delete branch → use destructive variants.
-- If NO specific project is mentioned AND it's a question → "conversation".
+
+ACTION BIAS rules (VERY IMPORTANT):
+- If the user describes something to BUILD, CREATE, ADD, FIX, IMPLEMENT → "code_change" (NOT conversation).
+- "crea una landing page" → "code_change" (with the most relevant project or null).
+- "investiga X" / "averigua Y" → "plan" (this triggers real research, not just chat).
+- "haz X" / "implementa Y" / "anade Z" → "code_change".
+- "mejora el chatbot" → "code_change" (with the relevant project).
+- ONLY use "conversation" when the user is EXPLICITLY asking a question expecting a text answer.
+- ONLY use "conversation" for greetings, opinions, debugging questions where no code change is needed.
+- When in doubt between "code_change" and "conversation", choose "code_change".
+- When in doubt between "plan" and "conversation", choose "plan".
 
 DOMOTICA / SMART HOME rules:
 - "enciende/apaga/pon las luces" → action "domotica", ha_action "turn_on"/"turn_off".

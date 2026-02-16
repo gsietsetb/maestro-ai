@@ -85,6 +85,10 @@ class Settings(BaseSettings):
     )
     notification_enabled: bool = Field(default=True, description="Enable proactive notifications")
 
+    # ── Ollama (local LLM) ──────────────────────────────────────────────
+    ollama_url: str = Field(default="http://localhost:11434", description="Ollama API URL")
+    ollama_model: str = Field(default="qwen3:4b", description="Default Ollama model")
+
     # ── Project Monitor ───────────────────────────────────────────────────
     project_monitor_interval: int = Field(default=300, description="Seconds between local project scans")
 

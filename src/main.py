@@ -312,6 +312,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="Sierra Bot – Cursor Orchestrator", lifespan=lifespan)
 
+    # ── CORS (allow remote dashboard at guillesierra.com) ─────────────────
+    from starlette.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     # ── Dashboard + API routes ────────────────────────────────────────────
     app.include_router(dashboard_router)
 
@@ -429,6 +440,17 @@ async def run_polling(settings: Settings) -> None:
 
     # FastAPI for WebSocket agent mesh + health + WA bridge + dashboard
     app = FastAPI()
+
+    from starlette.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     app.state.start_time = time.time()
     app.state.components = components
     app.state.tg_app = tg_app  # Expose to dashboard in polling mode
