@@ -28,12 +28,14 @@ class ProactiveNotifier:
         telegram_token: str = "",
         telegram_chat_id: str = "",
         wa_bridge_url: str = "http://localhost:3001",
+        waha_api_key: str = "",
         wa_number: str = "",
         enabled: bool = True,
     ):
         self._tg_token = telegram_token
         self._tg_chat_id = telegram_chat_id
         self._wa_bridge_url = wa_bridge_url
+        self._waha_api_key = waha_api_key
         self._wa_number = wa_number
         self._enabled = enabled
         self._client = httpx.AsyncClient(timeout=15.0)
@@ -88,13 +90,45 @@ class ProactiveNotifier:
         if not self.whatsapp_configured:
             return False
 
-        try:
-            resp = await self._client.post(
-                f"{self._wa_bridge_url}/send",
-                json={"to": self._wa_number, "text": text},
+        headers = {"X-Api-Key": self._waha_api_key} if self._waha_api_key else {}
+        bridge_url = self._wa_bridge_url.rstrip("/")
+        to = self._wa_number.strip()
+        chat_id = to if "@" in to else f"{to}@c.us"
+
+        async def _ok(resp: httpx.Response) -> bool:
+            if resp.status_code not in (200, 201):
+                return False
+            content_type = resp.headers.get("content-type", "")
+            if "application/json" not in content_type:
+                return True
+            try:
+                data = resp.json()
+            except Exception:
+                return False
+            # WAHA and legacy bridge use different payloads; treat both as success.
+            return bool(
+                data.get("success", False)
+                or data.get("status") in {"ok", "sent", "queued"}
+                or "id" in data
             )
-            data = resp.json()
-            return data.get("success", False)
+
+        try:
+            # WAHA API (preferred)
+            resp = await self._client.post(
+                f"{bridge_url}/api/sendText",
+                headers=headers,
+                json={"session": "default", "chatId": chat_id, "text": text},
+            )
+            if await _ok(resp):
+                return True
+
+            # Legacy Baileys bridge fallback
+            resp = await self._client.post(
+                f"{bridge_url}/send",
+                headers=headers,
+                json={"to": to, "text": text},
+            )
+            return await _ok(resp)
         except Exception as e:
             logger.error("WhatsApp send failed: %s", e)
             return False

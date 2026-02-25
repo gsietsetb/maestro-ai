@@ -4,19 +4,28 @@ projects:
     repo: https://github.com/G97-TECH-MKT/plinng-web
     stack: nextjs
     agents_md: true
+    production_ready: 65
+    status: "Active development - Luca asesor financiero"
+    url: "https://luca.vercel.app"
+    description: "Luca - Asesor financiero con IA para marketing agencies"
+    priority: high
     commands:
       dev: "npm run dev"
       build: "npm run build"
       test: "npm run test"
       lint: "npm run lint"
       deploy: "vercel deploy --prod"
-    aliases: ["plinng", "web", "marketing", "dashboard"]
+    aliases: ["plinng", "web", "marketing", "dashboard", "luca"]
 
   plinng-expo:
     path: /Users/guillermosierraaiello/dev/plinng-expo
     repo: https://github.com/G97-TECH-MKT/orbidi-mobile-expo
     stack: expo
     agents_md: true
+    production_ready: 50
+    status: "Mobile app - needs sync with web"
+    description: "Plinng mobile app (Expo)"
+    priority: medium
     commands:
       dev: "npx expo start"
       build: "eas build"
@@ -29,6 +38,10 @@ projects:
     repo: https://github.com/G97-TECH-MKT/plinng-mobile
     stack: react-native
     agents_md: false
+    production_ready: 5
+    status: "Initial commit only - deprecated in favor of Expo"
+    description: "Plinng React Native (legacy)"
+    priority: low
     commands:
       dev: "npx react-native start"
       build: "npx react-native build-android"
@@ -40,6 +53,10 @@ projects:
     repo: https://github.com/G97-TECH-MKT/MARKETIQ
     stack: fastapi
     agents_md: false
+    production_ready: 75
+    status: "Bug fixing phase - geolocation, reviews, SSL"
+    description: "MARKETIQ API - benchmark, SEO analysis, competitor intelligence"
+    priority: high
     commands:
       dev: "uvicorn src.marketiq.main:app --reload"
       test: "pytest"
@@ -52,6 +69,11 @@ projects:
     repo: https://github.com/gsietsetb/divenamic
     stack: vite-react
     agents_md: true
+    production_ready: 40
+    status: "32 commits behind - needs rebase"
+    url: "https://divenamic-marketplace.vercel.app"
+    description: "Divenamic - marketplace de cursos de buceo"
+    priority: medium
     commands:
       dev: "npm run dev"
       build: "npm run build"
@@ -64,6 +86,11 @@ projects:
     repo: https://github.com/gsietsetb/divenamic
     stack: vite-react
     agents_md: true
+    production_ready: 70
+    status: "AI chatbot deployed - SEO and formatting done"
+    url: "https://divenamic-ai.vercel.app"
+    description: "Divenamic AI - chatbot asistente de viajes de buceo"
+    priority: high
     commands:
       dev: "npm run dev"
       build: "npm run build"
@@ -74,6 +101,11 @@ projects:
     repo: https://github.com/gsietsetb/PlanetMoji
     stack: react-native
     agents_md: false
+    production_ready: 85
+    status: "Stable branch - UX pass done, ready for stores"
+    url: "https://planetmoji.vercel.app"
+    description: "PlanetMoji - juego social de emojis"
+    priority: medium
     commands:
       dev: "npx react-native start"
       build: "npx react-native build-android"
@@ -84,6 +116,10 @@ projects:
     repo: https://github.com/Laurel-Gaming/laurel-gaming-mobile
     stack: turborepo
     agents_md: false
+    production_ready: 30
+    status: "Stale - 10 months since last commit"
+    description: "Laurel Gaming - mobile gaming platform"
+    priority: low
     commands:
       dev: "turbo dev"
       build: "turbo build"
@@ -95,6 +131,10 @@ projects:
     repo: https://github.com/G97-TECH-MKT/app_mobile
     stack: react-native
     agents_md: false
+    production_ready: 40
+    status: "Stale - 4 months, last fixes committed"
+    description: "Orbidi mobile app"
+    priority: low
     commands:
       dev: "npx react-native start"
       build: "npx react-native build-android"
@@ -105,6 +145,10 @@ projects:
     repo: https://github.com/dopelist/dopelist-react-native
     stack: expo
     agents_md: false
+    production_ready: 20
+    status: "Stale - 8 months, 5 uncommitted changes"
+    description: "Dopelist - music discovery app"
+    priority: low
     commands:
       dev: "npx expo start"
       build: "eas build"
@@ -115,17 +159,26 @@ projects:
     repo: https://github.com/gsietsetb/cursor-orchestrator
     stack: fastapi
     agents_md: false
+    production_ready: 60
+    status: "Core functional - 132 uncommitted, needs commit cleanup"
+    url: "https://sierrabot-dashboard.vercel.app"
+    description: "Maestro AI - orchestrator central, dashboard, Telegram bot"
+    priority: critical
     commands:
       dev: "python -m src.main --polling"
       test: "python -m pytest tests/ -v"
       start: "bash start.sh"
-    aliases: ["orchestrator", "nerve", "brain", "sistema"]
+    aliases: ["orchestrator", "nerve", "brain", "sistema", "maestro"]
 
   watch-companion:
     path: /Users/guillermosierraaiello/dev/watch-companion
     repo: https://github.com/gsietsetb/watch-companion
     stack: swiftui
     agents_md: false
+    production_ready: 10
+    status: "Initial commit - research phase"
+    description: "Apple Watch companion app para orchestrator"
+    priority: medium
     commands:
       build: "xcodebuild -scheme WatchCompanion"
     aliases: ["watch", "reloj", "wrist"]
@@ -135,6 +188,10 @@ projects:
     repo: https://github.com/gsietsetb/music-ai
     stack: fastapi
     agents_md: false
+    production_ready: 10
+    status: "Initial commit - 7 uncommitted, MVP in progress"
+    description: "Music AI - coach de canto con analisis de pitch"
+    priority: medium
     commands:
       dev: "uvicorn src.api.main:app --reload --port 8001"
       test: "python -m pytest tests/ -v"
@@ -145,6 +202,10 @@ projects:
     repo: https://github.com/gsietsetb/ella-neo-controller
     stack: vanilla-js
     agents_md: false
+    production_ready: 10
+    status: "Initial commit - BLE proof of concept"
+    description: "Ella Neo - biofeedback sensor controller via BLE"
+    priority: medium
     commands:
       dev: "python -m http.server 8080"
     aliases: ["ella", "neo", "ble", "intimate"]

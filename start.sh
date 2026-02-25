@@ -29,6 +29,11 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Optional components (safe defaults for stability)
+ENABLE_WAHA="${ENABLE_WAHA:-1}"
+ENABLE_TUNNEL="${ENABLE_TUNNEL:-1}"
+WATCHDOG_CHECK_TUNNEL="${WATCHDOG_CHECK_TUNNEL:-0}"
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 is_running() {
@@ -84,6 +89,9 @@ case "${1:-start}" in
             echo -e "${RED}Error: .env no encontrado. Ejecuta primero: bash scripts/setup.sh${NC}"
             exit 1
         fi
+        set -a
+        source .env
+        set +a
 
         # Stop existing instances
         stop_process "$PIDFILE_CAFFEINE" "Caffeinate" 2>/dev/null || true
@@ -132,28 +140,62 @@ case "${1:-start}" in
         DAEMON_PID=$(cat "$PIDFILE_DAEMON")
         echo -e "  ${GREEN}Daemon arrancado (PID $DAEMON_PID)${NC}"
 
-        # Start WhatsApp Web Bridge (Baileys)
+        # Start WhatsApp via WAHA (Docker)
         echo ""
-        echo -e "${YELLOW}[3/4] Arrancando WhatsApp Web Bridge...${NC}"
-        if [ -d "$PROJECT_DIR/wa-bridge/node_modules" ]; then
-            cd "$PROJECT_DIR/wa-bridge"
-            WA_ALLOWED_NUMBERS="${WA_ALLOWED_NUMBERS:-}" \
-            WA_BRIDGE_PORT="${WA_BRIDGE_PORT:-3001}" \
-            ORCHESTRATOR_URL="http://localhost:${PORT:-8000}" \
-            nohup node index.js > "$LOGDIR/wa-bridge.log" 2>&1 &
-            echo $! > "$PIDFILE_WABRIDGE"
-            WA_PID=$(cat "$PIDFILE_WABRIDGE")
-            echo -e "  ${GREEN}WA Bridge arrancado (PID $WA_PID)${NC}"
-            cd "$PROJECT_DIR"
-            # Check if auth exists (no QR needed)
-            if [ -d "$PROJECT_DIR/wa-bridge/auth_state" ] && [ "$(ls -A $PROJECT_DIR/wa-bridge/auth_state 2>/dev/null)" ]; then
-                echo -e "  ${GREEN}Sesion WhatsApp existente (no QR necesario)${NC}"
-            else
-                echo -e "  ${YELLOW}Primera vez: escanea el QR en los logs:${NC}"
-                echo -e "    tail -f $LOGDIR/wa-bridge.log"
-            fi
+        echo -e "${YELLOW}[3/4] Arrancando WhatsApp WAHA (Docker)...${NC}"
+        if [[ "$ENABLE_WAHA" != "1" ]]; then
+            echo -e "  ${YELLOW}WAHA deshabilitado (ENABLE_WAHA=$ENABLE_WAHA).${NC}"
+        elif ! command -v docker >/dev/null 2>&1; then
+            echo -e "  ${YELLOW}Docker no instalado. WAHA omitido.${NC}"
+        elif ! docker info >/dev/null 2>&1; then
+            echo -e "  ${YELLOW}Docker daemon no disponible. WAHA omitido.${NC}"
         else
-            echo -e "  ${YELLOW}WA Bridge no instalado. Ejecuta: cd wa-bridge && npm install${NC}"
+            WAHA_STARTED=0
+            # Stop old Baileys bridge if running
+            if [ -f "$PIDFILE_WABRIDGE" ]; then
+                kill "$(cat $PIDFILE_WABRIDGE)" 2>/dev/null || true
+                rm -f "$PIDFILE_WABRIDGE"
+            fi
+            # Ensure WAHA container exists and is running
+            if docker ps -q -f name=waha | grep -q .; then
+                echo -e "  ${GREEN}WAHA ya corriendo${NC}"
+                WAHA_STARTED=1
+            elif docker ps -aq -f name=waha | grep -q .; then
+                if docker start waha > /dev/null 2>&1; then
+                    echo -e "  ${GREEN}WAHA reiniciado${NC}"
+                    WAHA_STARTED=1
+                else
+                    echo -e "  ${YELLOW}No se pudo arrancar WAHA. Continua sin WhatsApp.${NC}"
+                fi
+            else
+                if docker run -d \
+                    --name waha \
+                    --platform linux/amd64 \
+                    -p 3002:3000 \
+                    -e WHATSAPP_HOOK_URL=http://host.docker.internal:${PORT:-8000}/wa-bridge/incoming \
+                    -e WHATSAPP_HOOK_EVENTS=message,message.any,session.status \
+                    -e WHATSAPP_DEFAULT_ENGINE=WEBJS \
+                    -e WAHA_DASHBOARD_ENABLED=true \
+                    -v "$PROJECT_DIR/waha-data:/tmp/waha-data" \
+                    devlikeapro/waha:latest > /dev/null 2>&1; then
+                    echo -e "  ${GREEN}WAHA creado y arrancado${NC}"
+                    WAHA_STARTED=1
+                else
+                    echo -e "  ${YELLOW}No se pudo crear WAHA. Continua sin WhatsApp.${NC}"
+                fi
+            fi
+            if [[ "$WAHA_STARTED" -eq 1 ]]; then
+                # Check session status
+                sleep 3
+                WAHA_STATUS=$(curl -s http://localhost:3002/api/sessions/default -H "X-Api-Key: ${WAHA_API_KEY:-}" 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('status','UNKNOWN'))" 2>/dev/null || echo "UNKNOWN")
+                if [ "$WAHA_STATUS" = "WORKING" ]; then
+                    echo -e "  ${GREEN}WhatsApp conectado y funcionando${NC}"
+                elif [ "$WAHA_STATUS" = "SCAN_QR_CODE" ]; then
+                    echo -e "  ${YELLOW}Escanea QR en: http://localhost:3002/dashboard${NC}"
+                else
+                    echo -e "  ${YELLOW}WAHA status: $WAHA_STATUS (espera unos segundos)${NC}"
+                fi
+            fi
         fi
 
         # Wait for daemon to connect
@@ -163,7 +205,9 @@ case "${1:-start}" in
         echo ""
         echo -e "${YELLOW}[4/4] Arrancando Cloudflare Tunnel (acceso global)...${NC}"
         TUNNEL_URL=""
-        if [[ -f "$HOME/.cloudflared/config.yml" ]] && [[ -f "$PROJECT_DIR/.tunnel-id" ]]; then
+        if [[ "$ENABLE_TUNNEL" != "1" ]]; then
+            echo -e "  ${YELLOW}Tunnel deshabilitado (ENABLE_TUNNEL=$ENABLE_TUNNEL).${NC}"
+        elif [[ -f "$HOME/.cloudflared/config.yml" ]] && [[ -f "$PROJECT_DIR/.tunnel-id" ]]; then
             # Permanent tunnel
             stop_process "$PIDFILE_TUNNEL" "Tunnel" 2>/dev/null || true
             TUNNEL_LOG="$LOGDIR/tunnel.log"
@@ -221,6 +265,16 @@ case "${1:-start}" in
         if [[ -n "$TUNNEL_URL" ]]; then
             echo -e "  Dashboard: ${GREEN}${TUNNEL_URL}/dashboard${NC} (acceso global)"
 
+            # Push tunnel URL to Supabase (auto-discovery for dashboard)
+            SUPA_URL="https://qaixgdxfnytwtfygbtac.supabase.co"
+            SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhaXhnZHhmbnl0d3RmeWdidGFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjcwMTIsImV4cCI6MjA4NTgwMzAxMn0.FVoHyOAMxSfhIuj8Rjq785lR7yURK0L0reDjlJkbAMA"
+            curl -s -X PATCH "$SUPA_URL/rest/v1/system_config?key=eq.tunnel_url" \
+                -H "apikey: $SUPA_KEY" \
+                -H "Authorization: Bearer $SUPA_KEY" \
+                -H "Content-Type: application/json" \
+                -d "{\"value\": \"$TUNNEL_URL\", \"updated_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > /dev/null 2>&1 || true
+            echo -e "  ${GREEN}Tunnel URL pushed to Supabase (auto-discovery)${NC}"
+
             # Notify via Telegram
             TG_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
             TG_CHAT="${NOTIFICATION_TELEGRAM_CHAT_ID:-}"
@@ -239,6 +293,7 @@ case "${1:-start}" in
         echo -e "    bash start.sh logs     → ver logs en tiempo real"
         echo -e "    bash start.sh status   → ver estado"
         echo -e "    bash start.sh stop     → parar todo"
+        echo -e "    bash start.sh watchdog → auto-restart si server muere"
         echo ""
         ;;
 
@@ -388,15 +443,100 @@ case "${1:-start}" in
         echo -e "${GREEN}Sleep restaurado.${NC}"
         ;;
 
+    watchdog)
+        echo -e "${YELLOW}Watchdog activo – reiniciara server si muere (Ctrl+C para salir)${NC}"
+        WATCHDOG_INTERVAL=10
+        WATCHDOG_ALERT_COOLDOWN=300
+        LAST_SERVER_DOWN_ALERT=0
+        SERVER_WAS_DOWN=0
+
+        # If nothing is running, do a full start first
+        if ! is_running "$PIDFILE_SERVER"; then
+            echo -e "  ${YELLOW}Server no detectado, haciendo arranque completo...${NC}"
+            if ! bash "$0" start; then
+                echo -e "  ${YELLOW}Arranque inicial con warnings. Watchdog continua.${NC}"
+            fi
+            sleep 5
+        fi
+
+        while true; do
+            if ! is_running "$PIDFILE_SERVER"; then
+                echo -e "  ${RED}[$(date +%H:%M:%S)] Server muerto! Reiniciando...${NC}"
+                # Notify via Telegram
+                [[ -f ".venv/bin/activate" ]] && source .venv/bin/activate 2>/dev/null || true
+                [[ -f ".env" ]] && source .env 2>/dev/null || true
+                TG_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
+                TG_CHAT="${NOTIFICATION_TELEGRAM_CHAT_ID:-}"
+                NOW_TS=$(date +%s)
+                if [[ -n "$TG_TOKEN" && -n "$TG_CHAT" ]] && {
+                    [[ "$SERVER_WAS_DOWN" -eq 0 ]] ||
+                    [[ $((NOW_TS - LAST_SERVER_DOWN_ALERT)) -ge "$WATCHDOG_ALERT_COOLDOWN" ]]
+                }; then
+                    curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+                        -d chat_id="${TG_CHAT}" \
+                        -d text="⚠️ Server caido detectado. Reiniciando automaticamente..." \
+                        > /dev/null 2>&1 || true
+                    LAST_SERVER_DOWN_ALERT="$NOW_TS"
+                fi
+                SERVER_WAS_DOWN=1
+                if ! bash "$0" restart; then
+                    echo -e "  ${YELLOW}Reinicio parcial con warnings. Reintentando en el siguiente ciclo.${NC}"
+                fi
+                sleep 5
+                if is_running "$PIDFILE_SERVER"; then
+                    if [[ -n "$TG_TOKEN" && -n "$TG_CHAT" ]]; then
+                        curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+                            -d chat_id="${TG_CHAT}" \
+                            -d text="✅ Server reiniciado por watchdog." \
+                            > /dev/null 2>&1 || true
+                    fi
+                    SERVER_WAS_DOWN=0
+                fi
+            else
+                SERVER_WAS_DOWN=0
+            fi
+            if ! is_running "$PIDFILE_DAEMON"; then
+                echo -e "  ${RED}[$(date +%H:%M:%S)] Daemon muerto! Reiniciando...${NC}"
+                [[ -f ".venv/bin/activate" ]] && source .venv/bin/activate 2>/dev/null || true
+                if nohup python -m src.local_agent.daemon > "$LOGDIR/daemon.log" 2>&1 & then
+                    echo $! > "$PIDFILE_DAEMON"
+                    echo -e "  ${GREEN}Daemon reiniciado (PID $(cat $PIDFILE_DAEMON))${NC}"
+                else
+                    echo -e "  ${YELLOW}No se pudo reiniciar daemon en este ciclo.${NC}"
+                fi
+            fi
+            if [[ "$WATCHDOG_CHECK_TUNNEL" == "1" ]] && [[ "$ENABLE_TUNNEL" == "1" ]]; then
+                if ! is_running "$PIDFILE_TUNNEL"; then
+                    echo -e "  ${RED}[$(date +%H:%M:%S)] Tunnel muerto! Reiniciando...${NC}"
+                    if command -v cloudflared >/dev/null 2>&1; then
+                        TUNNEL_LOG="$LOGDIR/tunnel.log"
+                        nohup cloudflared tunnel --url "http://localhost:${PORT:-8000}" > "$TUNNEL_LOG" 2>&1 &
+                        echo $! > "$PIDFILE_TUNNEL"
+                        sleep 5
+                        NEW_URL=$(grep -oE 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' "$TUNNEL_LOG" 2>/dev/null | head -1 || true)
+                        if [[ -n "$NEW_URL" ]]; then
+                            echo "$NEW_URL" > "$PROJECT_DIR/.tunnel-url"
+                            echo -e "  ${GREEN}Tunnel reiniciado → $NEW_URL${NC}"
+                        fi
+                    else
+                        echo -e "  ${YELLOW}cloudflared no disponible, omitiendo reinicio tunnel.${NC}"
+                    fi
+                fi
+            fi
+            sleep "$WATCHDOG_INTERVAL"
+        done
+        ;;
+
     *)
         echo ""
-        echo "Uso: $0 {start|stop|restart|status|logs|awake|sleep-off|sleep-on}"
+        echo "Uso: $0 {start|stop|restart|status|logs|watchdog|awake|sleep-off|sleep-on}"
         echo ""
         echo "  start     → Arranca server + daemon + caffeinate"
         echo "  stop      → Para todo"
         echo "  restart   → Reinicia todo"
         echo "  status    → Ver estado"
         echo "  logs      → Logs en tiempo real"
+        echo "  watchdog  → Auto-restart si algun proceso muere"
         echo "  awake     → Solo caffeinate (Mac no duerme)"
         echo "  sleep-off → Desactivar sleep permanentemente (pmset + sudo)"
         echo "  sleep-on  → Restaurar sleep por defecto"

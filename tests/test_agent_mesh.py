@@ -91,6 +91,12 @@ class TestAgentMesh:
         agent = mesh.find_best_agent(require_capability="claude_code")
         assert agent.hostname == "pc2"
 
+    def test_has_capability(self):
+        mesh = self._make_mesh()
+        self._register_agent(mesh, "a1", "pc1", capabilities={"git", "codex"})
+        assert mesh.has_capability("codex")
+        assert not mesh.has_capability("docker")
+
     def test_prefers_least_loaded(self):
         mesh = self._make_mesh()
         self._register_agent(mesh, "a1", "busy-pc", running_tasks=2, max_concurrent=3)

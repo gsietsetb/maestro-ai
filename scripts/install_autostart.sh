@@ -18,6 +18,7 @@
 set -euo pipefail
 
 LABEL="com.cursor-orchestrator.autostart"
+LEGACY_LABEL="com.sierrabot.orchestrator"
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 LOG_DIR="${PROJECT_DIR}/logs"
 PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
@@ -50,6 +51,9 @@ if [[ "${1:-}" == "uninstall" ]]; then
     OLD_LABEL="com.cursor-orchestrator.agent"
     launchctl bootout "gui/$(id -u)/${OLD_LABEL}" 2>/dev/null || true
     rm -f "$HOME/Library/LaunchAgents/${OLD_LABEL}.plist"
+    # Remove legacy watchdog LaunchAgent if exists
+    launchctl bootout "gui/$(id -u)/${LEGACY_LABEL}" 2>/dev/null || true
+    rm -f "$HOME/Library/LaunchAgents/${LEGACY_LABEL}.plist"
 
     echo -e "${GREEN}Desinstalado.${NC}"
     echo -e "  El orchestrator ya NO arrancara al encender el Mac."
@@ -79,6 +83,10 @@ if [[ "${1:-}" == "status" ]]; then
         echo -e "  Estado:       ${GREEN}CARGADO (activo)${NC}"
     else
         echo -e "  Estado:       ${YELLOW}NO CARGADO${NC}"
+    fi
+
+    if launchctl print "gui/$(id -u)/${LEGACY_LABEL}" &>/dev/null; then
+        echo -e "  Legacy:       ${YELLOW}${LEGACY_LABEL} ACTIVO (recomendado: uninstall)${NC}"
     fi
 
     echo ""
@@ -147,15 +155,21 @@ log "═════════════════════════
 
 cd "${PROJECT_DIR}" || { log "ERROR: No se pudo acceder a ${PROJECT_DIR}"; exit 1; }
 
-# Wait for network (important on boot)
-log "Esperando red..."
-for i in $(seq 1 30); do
-    if ping -c 1 -W 2 api.telegram.org &>/dev/null; then
+# Wait for network (best effort; don't block boot forever)
+log "Comprobando red..."
+NETWORK_OK=0
+for i in $(seq 1 20); do
+    if curl -sS --max-time 3 https://api.telegram.org >/dev/null 2>&1 || \
+       curl -sS --max-time 3 https://www.cloudflare.com >/dev/null 2>&1; then
+        NETWORK_OK=1
         log "Red disponible (intento $i)"
         break
     fi
     sleep 2
 done
+if [[ "$NETWORK_OK" -ne 1 ]]; then
+    log "WARNING: red no confirmada tras timeout; continuo igualmente"
+fi
 
 # Source the venv
 if [[ -f ".venv/bin/activate" ]]; then
@@ -230,6 +244,8 @@ cat > "${PLIST}" <<PLIST
     <true/>
     <key>KeepAlive</key>
     <false/>
+    <key>AbandonProcessGroup</key>
+    <true/>
     <key>ProcessType</key>
     <string>Background</string>
 </dict>
@@ -244,6 +260,15 @@ if [[ -f "$HOME/Library/LaunchAgents/${OLD_LABEL}.plist" ]]; then
     launchctl bootout "gui/$(id -u)/${OLD_LABEL}" 2>/dev/null || true
     rm -f "$HOME/Library/LaunchAgents/${OLD_LABEL}.plist"
     echo -e "  ${GREEN}Antiguo eliminado.${NC}"
+fi
+
+# ── Remove legacy watchdog LaunchAgent if exists ──────────────────────────────
+
+if [[ -f "$HOME/Library/LaunchAgents/${LEGACY_LABEL}.plist" ]]; then
+    echo -e "  ${YELLOW}Desinstalando LaunchAgent legacy (${LEGACY_LABEL})...${NC}"
+    launchctl bootout "gui/$(id -u)/${LEGACY_LABEL}" 2>/dev/null || true
+    rm -f "$HOME/Library/LaunchAgents/${LEGACY_LABEL}.plist"
+    echo -e "  ${GREEN}Legacy eliminado.${NC}"
 fi
 
 # ── Load the LaunchAgent ──────────────────────────────────────────────────────

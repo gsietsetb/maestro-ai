@@ -74,12 +74,18 @@ def build_components(settings: Settings) -> dict:
 
     # ── Cursor executor (Cloud Agents API – company paid) ──────────────────
     cursor_executor = None
-    if settings.cursor_api_key and not settings.cursor_api_key.startswith("your-"):
+    if (
+        settings.allow_cursor_fallback
+        and settings.cursor_api_key
+        and not settings.cursor_api_key.startswith("your-")
+    ):
         cursor_executor = CursorExecutor(
             api_key=settings.cursor_api_key,
             default_model=None,  # Let Cursor auto-pick the best model
         )
         logger.info("Cursor Cloud Agents API enabled")
+    elif settings.cursor_api_key and not settings.cursor_api_key.startswith("your-"):
+        logger.info("Cursor API key detected but fallback is disabled (ALLOW_CURSOR_FALLBACK=false)")
 
     # ── Agent mesh (multi-PC) ─────────────────────────────────────────────
     agent_mesh = AgentMesh(ws_secret=settings.ws_secret)
@@ -116,6 +122,7 @@ def build_components(settings: Settings) -> dict:
         telegram_token=settings.telegram_bot_token,
         telegram_chat_id=settings.notification_telegram_chat_id,
         wa_bridge_url=settings.wa_bridge_url,
+        waha_api_key=settings.waha_api_key,
         wa_number=settings.notification_whatsapp_number,
         enabled=settings.notification_enabled,
     )
@@ -189,6 +196,18 @@ def build_components(settings: Settings) -> dict:
         "vercel_monitor": vercel_monitor,
         "project_monitor": project_monitor,
     }
+
+
+def preferred_code_executor(components: dict) -> str:
+    """Human-readable code executor order based on current capabilities."""
+    mesh: AgentMesh = components["agent_mesh"]
+    if mesh and mesh.has_capability("codex"):
+        return "Codex CLI (local)"
+    if mesh and mesh.has_capability("claude_code"):
+        return "Claude Code CLI (local)"
+    if components.get("cursor_executor"):
+        return "Cursor Cloud Agent"
+    return "none configured"
 
 
 # ── FastAPI app ──────────────────────────────────────────────────────────────
@@ -276,10 +295,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
         logger.info(
-            "Orchestrator started | Self-hosted | Channels: %s | AI: Gemini %s + Cursor | "
-            "Projects: %d | GitHub: %s | Vercel: %s | Dashboard: /dashboard",
+            "Orchestrator started | Self-hosted | Channels: %s | AI: Gemini %s | "
+            "Code: %s | Projects: %d | GitHub: %s | Vercel: %s | Dashboard: /dashboard",
             ", ".join(channels) or "none",
             settings.gemini_model,
+            preferred_code_executor(components),
             len(components["registry"].project_names()),
             "ON" if components["github_monitor"] else "OFF",
             "ON" if components["vercel_monitor"] else "OFF",
@@ -397,7 +417,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             },
             "ai": {
                 "intent_parser": f"Gemini {c['settings'].gemini_model}",
-                "code_changes": "Cursor Opus 4.6 Max" if c["cursor_executor"] else "Claude Code CLI",
+                "code_changes": preferred_code_executor(c),
                 "voice": "Gemini multimodal" if c["voice_parser"] else "disabled",
             },
             "monitors": {
@@ -495,11 +515,52 @@ async def run_polling(settings: Settings) -> None:
             voice_parser=components["voice_parser"],
             gemini=components["gemini"],
         )
+        wa_bridge._waha_api_key = getattr(settings, 'waha_api_key', '')
         app.state.wa_bridge = wa_bridge
 
         @app.post("/wa-bridge/incoming")
         async def wa_bridge_incoming(request: Request):
             data = await request.json()
+            # WAHA sends {"event": "message", "payload": {...}}
+            if "event" in data and "payload" in data:
+                payload = data["payload"]
+                event = data.get("event", "")
+                if event not in ("message", "message.any"):
+                    logger.debug("Ignoring WAHA event: %s", event)
+                    return {"status": "ignored"}
+                # Skip own messages
+                if payload.get("fromMe", False):
+                    return {"status": "ignored"}
+                sender_raw = payload.get("from", "")
+                sender = sender_raw.replace("@c.us", "").replace("@s.whatsapp.net", "")
+                text = payload.get("body", "")
+                media_type = None
+                media_data = None
+                if payload.get("hasMedia"):
+                    # Download media via WAHA API
+                    msg_id = payload.get("id", "")
+                    try:
+                        waha_url = settings.wa_bridge_url.rstrip("/")
+                        async with httpx.AsyncClient(timeout=30) as c:
+                            r = await c.get(
+                                f"{waha_url}/api/default/messages/{msg_id}/download",
+                                headers={"X-Api-Key": settings.waha_api_key} if hasattr(settings, "waha_api_key") else {},
+                            )
+                            if r.status_code == 200:
+                                import base64
+                                media_data = base64.b64encode(r.content).decode()
+                                mime = payload.get("mimetype", "")
+                                if "audio" in mime or "ogg" in mime:
+                                    media_type = "audio"
+                                elif "image" in mime:
+                                    media_type = "image"
+                                elif "video" in mime:
+                                    media_type = "video"
+                    except Exception as e:
+                        logger.warning("Failed to download WAHA media: %s", e)
+                translated = {"sender": sender, "text": text, "media_type": media_type, "media_base64": media_data}
+                return await wa_bridge.handle_incoming(translated)
+            # Legacy Baileys bridge format
             return await wa_bridge.handle_incoming(data)
 
         logger.info("WhatsApp Web Bridge handler registered at /wa-bridge/incoming")
@@ -539,12 +600,19 @@ async def run_polling(settings: Settings) -> None:
             try:
                 import httpx as hx
                 async with hx.AsyncClient(timeout=3.0) as c:
-                    r = await c.get(f"{settings.wa_bridge_url}/health")
-                    wa_bridge_status = r.json().get("status", "unknown")
+                    headers = {"X-Api-Key": settings.waha_api_key} if settings.waha_api_key else {}
+                    r = await c.get(f"{settings.wa_bridge_url}/api/sessions/default", headers=headers)
+                    if r.status_code == 401:
+                        wa_bridge_status = "unauthorized"
+                    elif r.status_code >= 400:
+                        wa_bridge_status = f"http_{r.status_code}"
+                    else:
+                        wa_bridge_status = r.json().get("status", "unknown")
             except Exception:
                 wa_bridge_status = "unreachable"
         return {
             "status": "ok",
+            "code_executor": preferred_code_executor(components),
             "mesh": mesh.status_summary(),
             "whatsapp_bridge": wa_bridge_status,
             "monitors": {
@@ -587,7 +655,7 @@ async def run_polling(settings: Settings) -> None:
         try:
             async with tg_app:
                 await tg_app.start()
-                await tg_app.updater.start_polling(drop_pending_updates=True)
+                await tg_app.updater.start_polling(drop_pending_updates=False)
                 logger.info("Telegram polling started for @%s", (await tg_app.bot.get_me()).username)
                 # Wait until stop is requested
                 await stop_event.wait()

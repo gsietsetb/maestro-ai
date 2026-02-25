@@ -2,7 +2,7 @@
 
 Connects to the orchestrator via WebSocket and registers with:
 - hostname, OS
-- capabilities (claude_code, docker, node, python, etc.)
+- capabilities (codex, claude_code, docker, node, python, etc.)
 - project paths available on this machine
 - max concurrent tasks
 
@@ -84,6 +84,7 @@ class LocalAgentDaemon:
         """Detect what tools are available on this machine."""
         caps = []
         checks = {
+            "codex": "codex",
             "claude_code": "claude",
             "node": "node",
             "python": "python3",
@@ -205,6 +206,9 @@ class LocalAgentDaemon:
         elif msg_type == "run_claude_code":
             await self._handle_claude_code(msg, ws)
 
+        elif msg_type == "run_codex_code":
+            await self._handle_codex_code(msg, ws)
+
         elif msg_type == "cancel":
             task_id = msg.get("task_id")
             if task_id:
@@ -274,6 +278,48 @@ class LocalAgentDaemon:
             "task_id": task_id,
             "success": result["success"],
             "output": output,
+            "exit_code": result.get("exit_code"),
+        }))
+
+    async def _handle_codex_code(self, msg: dict, ws) -> None:
+        task_id = msg.get("task_id", "unknown")
+        prompt = msg.get("prompt", "")
+        cwd = msg.get("cwd", "")
+        read_only = msg.get("read_only", False)
+        timeout = msg.get("timeout", 300)
+
+        sandbox_mode = "read-only" if read_only else "workspace-write"
+        codex_model = os.environ.get("CODEX_MODEL", "").strip()
+        model_arg = f"--model {codex_model} " if codex_model else ""
+
+        # Use shell escaping and collect a clean final message via --output-last-message.
+        escaped_prompt = prompt.replace("'", "'\\''")
+        command = (
+            "tmp_out=$(mktemp) && tmp_log=$(mktemp) && "
+            f"codex exec --ephemeral --skip-git-repo-check --sandbox {sandbox_mode} "
+            f"{model_arg}--output-last-message \"$tmp_out\" '{escaped_prompt}' "
+            "> \"$tmp_log\" 2>&1; "
+            "status=$?; "
+            "if [ -s \"$tmp_out\" ]; then cat \"$tmp_out\"; fi; "
+            "if [ \"$status\" -ne 0 ]; then echo '\\n[codex logs]'; tail -n 80 \"$tmp_log\"; fi; "
+            "rm -f \"$tmp_out\" \"$tmp_log\"; "
+            "exit \"$status\""
+        )
+
+        logger.info("[%s] Codex: %s (cwd=%s, ro=%s)", task_id[:8], prompt[:80], cwd, read_only)
+
+        result = await self._process_manager.run(
+            command=command,
+            cwd=cwd,
+            timeout=timeout,
+            task_id=task_id,
+        )
+
+        await ws.send(json.dumps({
+            "type": "result",
+            "task_id": task_id,
+            "success": result["success"],
+            "output": result["output"].strip(),
             "exit_code": result.get("exit_code"),
         }))
 

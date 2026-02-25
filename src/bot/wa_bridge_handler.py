@@ -52,6 +52,7 @@ class WABridgeHandler:
         self._voice_parser = voice_parser
         self._gemini = gemini
         self._client = httpx.AsyncClient(timeout=30.0)
+        self._waha_api_key = ""  # Set externally after init
         # Pending confirmations and last results per sender
         self._pending: dict[str, ParsedIntent] = {}
         self._last_results: dict[str, dict] = {}
@@ -62,7 +63,21 @@ class WABridgeHandler:
     # ── Send messages via bridge ─────────────────────────────────────────────
 
     async def _send_text(self, to: str, text: str) -> None:
-        """Send a text message via the WA bridge."""
+        """Send a text message via WAHA or legacy bridge."""
+        # Ensure @c.us suffix for WAHA
+        chat_id = to if "@" in to else f"{to}@c.us"
+        try:
+            # Try WAHA API first (port 3002)
+            r = await self._client.post(
+                f"{self._bridge_url}/api/sendText",
+                json={"chatId": chat_id, "text": text, "session": "default"},
+                headers={"X-Api-Key": getattr(self, '_waha_api_key', '')},
+            )
+            if r.status_code in (200, 201):
+                return
+        except Exception:
+            pass
+        # Fallback to legacy Baileys bridge
         try:
             await self._client.post(
                 f"{self._bridge_url}/send",

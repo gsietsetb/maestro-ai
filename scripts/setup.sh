@@ -156,10 +156,12 @@ echo -e "${YELLOW}[4/6] Verificando instalacion...${NC}"
 source .venv/bin/activate
 
 python -c "
+import shutil
 from src.config import get_settings
 from src.main import build_components
 
 s = get_settings()
+print(f'  Codex CLI: {\"OK\" if shutil.which(\"codex\") else \"NO instalado\"}')
 print(f'  Telegram: {\"OK\" if s.telegram_enabled else \"NO configurado\"}')
 print(f'  WhatsApp: {\"OK\" if s.whatsapp_enabled else \"NO configurado\"}')
 print(f'  Gemini: {\"OK\" if s.gemini_configured else \"NO configurado\"}')

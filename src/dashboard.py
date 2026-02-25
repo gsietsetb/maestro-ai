@@ -30,8 +30,9 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Request, BackgroundTasks
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
+import httpx
 
 from src.orchestrator.intent_parser import ParsedIntent
 from src.events import EventType
@@ -679,6 +680,8 @@ function renderHealthBar(state) {
     { name: 'Vercel', ok: m.vercel?.running },
     { name: 'Projects', ok: m.projects?.running },
     { name: 'Mesh', ok: (mesh.connected || 0) > 0 },
+    { name: 'Codex CLI', ok: state.codex_enabled },
+    { name: 'Claude Code', ok: state.claude_enabled },
     { name: 'Cursor API', ok: state.cursor_enabled },
     { name: 'Domotica', ok: state.domotica_enabled },
   ];
@@ -828,6 +831,8 @@ function renderSystem(state) {
     monitorRow('Vercel Monitor', vc.running, vc.vercel_projects ? vc.vercel_projects + ' projects' : '') +
     monitorRow('Project Scanner', pm.running, pm.total ? pm.total + ' projects' : '') +
     monitorRow('Agent Mesh', (state.mesh?.connected || 0) > 0, state.mesh?.connected ? state.mesh.connected + ' agents' : '') +
+    monitorRow('Codex CLI', state.codex_enabled, '') +
+    monitorRow('Claude Code', state.claude_enabled, '') +
     monitorRow('Cursor API', state.cursor_enabled, '') +
     monitorRow('Domotica', state.domotica_enabled, '');
 }
@@ -979,6 +984,8 @@ async def api_state(request: Request):
     # Mesh status
     mesh = components.get("agent_mesh")
     mesh_status = mesh.status_summary() if mesh else {}
+    codex_enabled = mesh.has_capability("codex") if mesh else False
+    claude_enabled = mesh.has_capability("claude_code") if mesh else False
 
     # Channels
     channels = {
@@ -1005,6 +1012,8 @@ async def api_state(request: Request):
         "channels": channels,
         "notifications": notif_status,
         "event_count": len(event_bus.store.recent(limit=9999)) if event_bus else 0,
+        "codex_enabled": codex_enabled,
+        "claude_enabled": claude_enabled,
         "cursor_enabled": bool(components.get("cursor_executor")),
         "domotica_enabled": bool(components.get("ha_executor")),
         "uptime": int(time.time() - request.app.state.start_time)
@@ -1267,3 +1276,343 @@ async def api_feedback(body: FeedbackRequest):
 async def api_get_feedback():
     """Get all feedback."""
     return {"feedback": _feedback_store[-50:], "total": len(_feedback_store)}
+
+
+# ── Source of Truth: Agent Config ──────────────────────────────────────────────
+
+
+@router.get("/api/source-of-truth")
+async def api_source_of_truth(request: Request):
+    """Single source of truth – EVERYTHING the system knows.
+
+    Returns all config, ALL API keys, project status, production readiness.
+    This is THE canonical reference for the entire system.
+    Accessible from any PC on the network.
+    """
+    import yaml
+
+    from src.config import get_settings
+    s = get_settings()
+
+    mesh = request.app.state.components.get("agent_mesh")
+    agents = []
+    if mesh:
+        for a in mesh._agents.values():
+            agents.append({
+                "id": a.agent_id,
+                "hostname": a.hostname,
+                "capabilities": list(a.capabilities),
+                "projects": list(a.project_paths.keys()),
+                "alive": a.is_alive,
+                "load": f"{a.running_tasks}/{a.max_concurrent}",
+            })
+
+    tunnel_url = ""
+    tunnel_file = Path(__file__).parent.parent / ".tunnel-url"
+    if tunnel_file.exists():
+        tunnel_url = tunnel_file.read_text().strip()
+
+    # Load projects with production readiness
+    projects_file = Path(__file__).parent.parent / "projects.yaml"
+    projects_data = {}
+    if projects_file.exists():
+        with open(projects_file) as f:
+            raw = yaml.safe_load(f)
+        for name, info in raw.get("projects", {}).items():
+            projects_data[name] = {
+                "path": info.get("path", ""),
+                "repo": info.get("repo", ""),
+                "stack": info.get("stack", ""),
+                "production_ready": info.get("production_ready", 0),
+                "status": info.get("status", ""),
+                "url": info.get("url", ""),
+                "description": info.get("description", ""),
+                "priority": info.get("priority", "low"),
+                "aliases": info.get("aliases", []),
+            }
+
+    return {
+        "system": {
+            "name": "Maestro AI / SierraBot",
+            "version": "1.0.0",
+            "host_mac": "MacBook-Pro-de-Guillermo-2.local",
+            "local_api": f"http://localhost:{s.port}",
+            "tunnel_api": tunnel_url,
+            "lan_api": f"http://192.168.0.67:{s.port}",
+            "dashboard_local": f"http://localhost:{s.port}/dashboard",
+            "dashboard_tunnel": f"{tunnel_url}/dashboard" if tunnel_url else "",
+            "dashboard_vercel": "https://sierrabot-dashboard.vercel.app",
+            "ws_endpoint": f"ws://localhost:{s.port}/ws/agent",
+        },
+        "secrets": {
+            "gemini_api_key": s.gemini_api_key,
+            "telegram_bot_token": s.telegram_bot_token,
+            "cursor_api_key": s.cursor_api_key,
+            "anthropic_api_key": s.anthropic_api_key,
+            "github_token": s.github_token,
+            "vercel_token": s.vercel_token,
+            "ha_token": s.ha_token,
+            "ws_secret": s.ws_secret,
+        },
+        "channels": {
+            "telegram": {"enabled": s.telegram_enabled, "bot": "@sierraAIBot", "chat_id": s.notification_telegram_chat_id},
+            "whatsapp": {"enabled": s.wa_bridge_enabled, "bridge_url": s.wa_bridge_url, "number": s.notification_whatsapp_number},
+        },
+        "llm": {
+            "gemini": {"model": s.gemini_model, "configured": s.gemini_configured, "key": s.gemini_api_key},
+            "ollama": {"url": s.ollama_url, "model": s.ollama_model},
+            "cursor": {"enabled": bool(s.cursor_api_key), "key": s.cursor_api_key},
+        },
+        "integrations": {
+            "vercel": {"enabled": s.vercel_enabled, "team_id": s.vercel_team_id, "token": s.vercel_token},
+            "github": {"enabled": s.github_enabled, "token": s.github_token},
+            "homeassistant": {"enabled": s.ha_enabled, "url": s.ha_url, "token": s.ha_token},
+        },
+        "projects": projects_data,
+        "agents": agents,
+        "network": {
+            "lan": f"http://192.168.0.67:{s.port}",
+            "tunnel": tunnel_url,
+            "vercel": "https://sierrabot-dashboard.vercel.app",
+            "instructions": "LAN: cualquier PC misma red. Tunnel: desde fuera. Vercel: dashboard estatico (necesita ?api=TUNNEL_URL).",
+        },
+    }
+
+
+# ── BRAIN.md – Shared knowledge base for all agents ──────────────────────────
+
+
+def _generate_brain_md(request: Request) -> str:
+    """Generate the BRAIN.md content from live system state."""
+    import yaml
+    from src.config import get_settings
+    s = get_settings()
+
+    tunnel_url = ""
+    tunnel_file = Path(__file__).parent.parent / ".tunnel-url"
+    if tunnel_file.exists():
+        tunnel_url = tunnel_file.read_text().strip()
+
+    projects_file = Path(__file__).parent.parent / "projects.yaml"
+    projects = {}
+    if projects_file.exists():
+        with open(projects_file) as f:
+            projects = yaml.safe_load(f).get("projects", {})
+
+    mesh = request.app.state.components.get("agent_mesh")
+    agents_info = []
+    if mesh:
+        for a in mesh._agents.values():
+            agents_info.append(f"- **{a.hostname}** ({a.agent_id[:8]}) | alive={a.is_alive} | load={a.running_tasks}/{a.max_concurrent} | projects={len(a.project_paths)}")
+
+    lines = []
+    lines.append("# BRAIN.md – Maestro AI Source of Truth")
+    lines.append("")
+    lines.append("> Auto-generated. Every agent, flow, and entry point reads this.")
+    lines.append(f"> Last updated: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append("")
+
+    # System
+    lines.append("## System")
+    lines.append(f"- **Name:** Maestro AI / SierraBot")
+    lines.append(f"- **Host:** MacBook-Pro-de-Guillermo-2.local")
+    lines.append(f"- **Local API:** http://localhost:{s.port}")
+    lines.append(f"- **LAN API:** http://192.168.0.67:{s.port}")
+    if tunnel_url:
+        lines.append(f"- **Tunnel API:** {tunnel_url}")
+    lines.append(f"- **Dashboard:** {tunnel_url}/dashboard" if tunnel_url else "- **Dashboard:** http://localhost:8000/dashboard")
+    lines.append(f"- **Vercel Dashboard:** https://sierrabot-dashboard.vercel.app")
+    lines.append(f"- **WebSocket:** ws://localhost:{s.port}/ws/agent")
+    lines.append("")
+
+    # API Keys
+    lines.append("## API Keys & Secrets")
+    lines.append(f"- **Gemini:** `{s.gemini_api_key}`")
+    lines.append(f"- **Telegram Bot:** `{s.telegram_bot_token}`")
+    lines.append(f"- **Cursor API:** `{s.cursor_api_key}`")
+    lines.append(f"- **GitHub PAT:** `{s.github_token}`")
+    lines.append(f"- **Vercel Token:** `{s.vercel_token}`")
+    lines.append(f"- **HA Token:** `{s.ha_token}`")
+    lines.append(f"- **WS Secret:** `{s.ws_secret}`")
+    lines.append("")
+
+    # Channels
+    lines.append("## Channels")
+    lines.append(f"- **Telegram:** @sierraAIBot (chat_id: {s.notification_telegram_chat_id})")
+    lines.append(f"- **WhatsApp:** {s.notification_whatsapp_number} (bridge: {s.wa_bridge_url})")
+    lines.append("")
+
+    # LLMs
+    lines.append("## LLMs Available")
+    lines.append(f"- **Gemini {s.gemini_model}** – intent parsing, transcription, vision")
+    lines.append(f"- **Ollama ({s.ollama_model})** – local, free, private ({s.ollama_url})")
+    lines.append("- **Codex CLI** – local code changes/review (via agent mesh)")
+    lines.append("- **Claude Code CLI** – local fallback for code changes/review")
+    lines.append("- **Cursor Cloud Agent** – cloud fallback (GitHub repos)")
+    lines.append("- **Execution order:** Codex > Claude Code > Cursor")
+    lines.append("")
+
+    # Projects
+    lines.append("## Projects")
+    lines.append("")
+    sorted_projects = sorted(projects.items(), key=lambda x: -x[1].get("production_ready", 0))
+    for name, info in sorted_projects:
+        pct = info.get("production_ready", 0)
+        priority = info.get("priority", "low").upper()
+        status = info.get("status", "")
+        desc = info.get("description", "")
+        url = info.get("url", "")
+        repo = info.get("repo", "")
+        stack = info.get("stack", "")
+        path = info.get("path", "")
+
+        lines.append(f"### {name} ({pct}% production ready) [{priority}]")
+        if desc:
+            lines.append(f"> {desc}")
+        lines.append(f"- **Stack:** {stack}")
+        lines.append(f"- **Status:** {status}")
+        lines.append(f"- **Path:** `{path}`")
+        if repo:
+            lines.append(f"- **Repo:** {repo}")
+        if url:
+            lines.append(f"- **URL:** {url}")
+        lines.append("")
+
+    # Agents
+    lines.append("## Connected Agents")
+    if agents_info:
+        lines.extend(agents_info)
+    else:
+        lines.append("- No agents connected")
+    lines.append("")
+
+    # How to use
+    lines.append("## How to Use")
+    lines.append("- **From Telegram:** Send any message to @sierraAIBot")
+    lines.append("- **From WhatsApp:** Send to +34692842705")
+    lines.append("- **From Dashboard:** Open the tunnel/LAN URL")
+    lines.append("- **From any agent:** Read this file or call GET /api/brain")
+    lines.append(f"- **Chatbot (Ollama local):** POST {tunnel_url or 'http://localhost:8000'}/api/ollama/chat")
+    lines.append(f"- **Chatbot (Gemini):** Send message via Telegram or WhatsApp")
+    lines.append("")
+    lines.append("## Rules")
+    lines.append("- Every agent MUST read BRAIN.md or /api/brain before starting work")
+    lines.append("- Every agent writes results back via the API")
+    lines.append("- Password for actions: `rotor`")
+    lines.append("- All keys are public within the network – no security restrictions")
+    lines.append("- Priority order: critical > high > medium > low")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+@router.get("/api/brain")
+async def api_brain(request: Request):
+    """Serve BRAIN.md as plain text – readable by any agent, curl, or browser."""
+    from fastapi.responses import PlainTextResponse
+    content = _generate_brain_md(request)
+    return PlainTextResponse(content, media_type="text/markdown")
+
+
+@router.get("/api/brain.json")
+async def api_brain_json(request: Request):
+    """Serve BRAIN.md content as JSON for programmatic access."""
+    content = _generate_brain_md(request)
+    return {"brain_md": content, "generated_at": time.strftime('%Y-%m-%d %H:%M:%S')}
+
+
+@router.post("/api/brain/sync")
+async def api_brain_sync(request: Request):
+    """Write BRAIN.md to disk so it's available offline and for local agents."""
+    content = _generate_brain_md(request)
+    brain_path = Path(__file__).parent.parent / "BRAIN.md"
+    brain_path.write_text(content)
+    return {"ok": True, "path": str(brain_path), "size": len(content)}
+
+
+@router.get("/api/source-of-truth/agent/{hostname}")
+async def api_agent_config(hostname: str, request: Request):
+    """Per-agent config – what a specific agent needs to know to connect."""
+    from src.config import get_settings
+    s = get_settings()
+
+    mesh = request.app.state.components.get("agent_mesh")
+    agent_info = None
+    if mesh:
+        for a in mesh._agents.values():
+            if a.hostname == hostname or a.agent_id.startswith(hostname):
+                agent_info = {
+                    "id": a.agent_id,
+                    "hostname": a.hostname,
+                    "capabilities": list(a.capabilities),
+                    "projects": list(a.project_paths.keys()),
+                    "alive": a.is_alive,
+                }
+                break
+
+    return {
+        "connect_to": f"ws://localhost:{s.port}/ws/agent",
+        "ws_secret": s.ws_secret,
+        "api_base": f"http://localhost:{s.port}",
+        "agent": agent_info,
+        "llm_available": {
+            "gemini": s.gemini_configured,
+            "ollama_local": s.ollama_url,
+            "cursor_api": bool(s.cursor_api_key),
+        },
+    }
+
+
+# ── WAHA Proxy (exposes WhatsApp dashboard and API globally) ──────────────────
+
+WAHA_BASE = "http://localhost:3002"
+WAHA_KEY = "sierrabot-waha-2026"
+
+_waha_client = httpx.AsyncClient(timeout=30.0, base_url=WAHA_BASE)
+
+
+@router.get("/waha/qr")
+async def waha_qr():
+    """Get WhatsApp QR code as PNG image (for global access)."""
+    try:
+        r = await _waha_client.get("/api/default/auth/qr", headers={"X-Api-Key": WAHA_KEY})
+        if r.status_code == 200:
+            ct = r.headers.get("content-type", "image/png")
+            if "json" in ct:
+                data = r.json()
+                if "data" in data:
+                    import base64
+                    img = base64.b64decode(data["data"])
+                    return Response(content=img, media_type="image/png")
+            return Response(content=r.content, media_type=ct)
+        return JSONResponse({"error": "QR not available", "status": r.status_code}, status_code=r.status_code)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=502)
+
+
+@router.get("/waha/status")
+async def waha_status():
+    """Get WAHA session status."""
+    try:
+        r = await _waha_client.get("/api/sessions/default", headers={"X-Api-Key": WAHA_KEY})
+        return JSONResponse(r.json())
+    except Exception as e:
+        return JSONResponse({"error": str(e), "status": "unreachable"}, status_code=502)
+
+
+@router.api_route("/waha/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def waha_proxy(request: Request, path: str):
+    """Reverse proxy to WAHA API for global access."""
+    try:
+        headers = {"X-Api-Key": WAHA_KEY, "Content-Type": request.headers.get("content-type", "application/json")}
+        body = await request.body() if request.method in ("POST", "PUT", "PATCH") else None
+        r = await _waha_client.request(
+            method=request.method,
+            url=f"/api/{path}",
+            headers=headers,
+            content=body,
+            params=dict(request.query_params),
+        )
+        return Response(content=r.content, status_code=r.status_code, media_type=r.headers.get("content-type"))
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=502)

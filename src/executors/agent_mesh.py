@@ -3,7 +3,7 @@
 Each PC/agent registers via WebSocket with:
 - hostname, OS, capabilities
 - list of project paths available on that machine
-- whether Claude Code CLI is installed
+- whether Codex/Claude Code CLI are installed
 - current load (running tasks count)
 
 The mesh routes tasks to the best available agent based on:
@@ -41,7 +41,7 @@ class AgentInfo:
     hostname: str
     os_name: str = ""
     ws: WebSocket | None = None
-    capabilities: set[str] = field(default_factory=set)  # {"claude_code", "docker", "node", "python"}
+    capabilities: set[str] = field(default_factory=set)  # {"codex", "claude_code", "docker", "node", "python"}
     project_paths: dict[str, str] = field(default_factory=dict)  # {project_name: path}
     running_tasks: int = 0
     max_concurrent: int = 3
@@ -81,6 +81,13 @@ class AgentMesh:
     @property
     def total_slots(self) -> int:
         return sum(a.available_slots for a in self._agents.values() if a.is_alive)
+
+    def has_capability(self, capability: str) -> bool:
+        """Return True if any alive agent exposes the given capability."""
+        return any(
+            a.is_alive and capability in a.capabilities
+            for a in self._agents.values()
+        )
 
     def status_summary(self) -> dict:
         """Return a summary of all agents for the /health endpoint."""
@@ -330,6 +337,57 @@ class AgentMesh:
             return ExecutionResult(
                 success=False,
                 output=f"Timeout ({timeout}s) de Claude Code en {agent.hostname}.",
+            )
+
+    async def run_codex_code(
+        self,
+        prompt: str,
+        cwd: str = "",
+        read_only: bool = False,
+        timeout: int = 300,
+        project_name: str | None = None,
+    ) -> ExecutionResult:
+        """Route a Codex CLI task to an agent that has codex capability."""
+        agent = self.find_best_agent(
+            project_name=project_name,
+            require_capability="codex",
+        )
+        if not agent or not agent.ws:
+            return ExecutionResult(
+                success=False,
+                output="No hay agente con Codex disponible.",
+            )
+
+        if project_name and project_name in agent.project_paths:
+            cwd = agent.project_paths[project_name]
+
+        task_id = str(uuid.uuid4())
+        fut: asyncio.Future = asyncio.get_event_loop().create_future()
+        self._pending[task_id] = fut
+        agent.running_tasks += 1
+
+        await agent.ws.send_text(json.dumps({
+            "type": "run_codex_code",
+            "task_id": task_id,
+            "prompt": prompt,
+            "cwd": cwd,
+            "read_only": read_only,
+            "timeout": timeout,
+        }))
+
+        try:
+            result = await asyncio.wait_for(fut, timeout=timeout + 10)
+            output = result.get("output", "")
+            return ExecutionResult(
+                success=result.get("success", False),
+                output=f"[{agent.hostname}] {output}",
+            )
+        except asyncio.TimeoutError:
+            self._pending.pop(task_id, None)
+            agent.running_tasks = max(0, agent.running_tasks - 1)
+            return ExecutionResult(
+                success=False,
+                output=f"Timeout ({timeout}s) de Codex en {agent.hostname}.",
             )
 
     # ── Heartbeat ─────────────────────────────────────────────────────────

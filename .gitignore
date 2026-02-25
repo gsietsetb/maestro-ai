@@ -10,3 +10,15 @@ data/
 dist/
 build/
 .vercel
+
+# Runtime files
+logs/
+.pid-*
+.tunnel-url
+*.log
+
+# Brain scripts deps
+scripts/brain/node_modules/
+
+# OS
+.claude/

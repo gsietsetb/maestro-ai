@@ -6,6 +6,16 @@ Orquestador self-hosted para gestionar todos tus proyectos de Cursor desde el mo
 
 Corre en tus propios PCs + Cloudflare Tunnel (gratis). Sin Railway, sin Fly.io, sin AWS.
 
+## Canonico (unico repo activo)
+
+Este repo es el **source of truth** de Orchestrator + Dashboard.
+
+Repos legacy que quedan solo como referencia:
+- `maestro-ai`
+- `sierraos`
+
+No deben recibir features nuevas ni despliegues de runtime.
+
 ## Arquitectura
 
 ```
@@ -21,8 +31,8 @@ Telegram/WhatsApp ──→ Cloudflare Tunnel ──→ FastAPI (tu PC)
                                       ├─ Git           ├─ Git
                                       └─ 11 proyectos  └─ CI/CD
                                         │
-                                Cursor Background Agent API
-                                   (Opus 4.6 Max)
+                                Cursor Cloud API (opcional)
+                             (solo si ALLOW_CURSOR_FALLBACK=true)
 ```
 
 ## Stack
@@ -32,8 +42,8 @@ Telegram/WhatsApp ──→ Cloudflare Tunnel ──→ FastAPI (tu PC)
 | Backend | FastAPI (Python 3.13) |
 | Intent parsing | Gemini 2.5 Flash (structured JSON) |
 | Transcripcion voz | Gemini multimodal nativo |
-| Cambios de codigo | Cursor Background Agent (Opus 4.6 Max) |
-| Analisis/Queries | Claude Code CLI (pagado empresa) |
+| Cambios de codigo | Codex CLI (local) -> Claude Code (Cursor opcional) |
+| Analisis/Queries | Codex CLI (local) + Gemini + Claude fallback |
 | Operaciones locales | Agent mesh multi-PC |
 | Domotica | Home Assistant + MQTT (Docker) |
 | Webhook exposure | Cloudflare Tunnel (gratis) |
@@ -49,6 +59,8 @@ git clone <repo> cursor-orchestrator && cd cursor-orchestrator
 python3.13 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # editar con tus API keys
+# modo empresa recomendado (sin consumo de Cursor):
+# ALLOW_CURSOR_FALLBACK=false
 ```
 
 ### 2. Configurar Cloudflare Tunnel (reemplaza Railway)
@@ -71,7 +83,7 @@ bash scripts/install_agent.sh --linux
 
 El daemon auto-descubre:
 - Proyectos en `~/dev` (package.json, pyproject.toml, etc.)
-- Capabilities: claude_code, git, docker, node, python, npm, etc.
+- Capabilities: codex, claude_code, git, docker, node, python, npm, etc.
 
 ### 4. Arrancar Home Assistant (domotica)
 
@@ -94,6 +106,11 @@ python -m src.main
 python -m src.main --polling
 ```
 
+Flags utiles en `.env`:
+- `ALLOW_CURSOR_FALLBACK=false` (default recomendado en empresa)
+- `WATCHDOG_CHECK_TUNNEL=0` (evita bucles por rate-limit de quick tunnel)
+- `ENABLE_WAHA=1` (pon `0` solo si quieres arrancar sin WhatsApp temporalmente)
+
 ## Uso desde el movil
 
 ### Preguntas libres (ask anything)
@@ -101,10 +118,15 @@ python -m src.main --polling
 - "Que diferencia hay entre React Server Components y Client Components?"
 - "Explica la arquitectura de divenamic"
 
-### Cambios de codigo (Cursor Opus 4.6 Max)
+### Cambios de codigo (Codex -> Claude, Cursor opcional)
 - "Anade dark mode a plinng-web"
 - "Refactoriza el componente de checkout en la expo app"
 - "Fix el bug de login en la API"
+
+Orden de ejecucion para tareas de codigo:
+1. Codex CLI local (mejor calidad y contexto local)
+2. Claude Code CLI local (fallback)
+3. Cursor Cloud Agent (solo si `ALLOW_CURSOR_FALLBACK=true`)
 
 ### Operaciones
 - "Corre los tests de la API"
@@ -137,7 +159,7 @@ GET /health → muestra todos los agentes, carga, proyectos, capabilities
 El router escoge automaticamente el mejor agente basandose en:
 1. Que PC tiene el proyecto en disco
 2. Carga actual (menos ocupado primero)
-3. Capabilities necesarias (claude_code, docker, etc.)
+3. Capabilities necesarias (codex, claude_code, docker, etc.)
 4. Estado de conexion (heartbeat cada 30s)
 
 ### Variables por agente (en cada PC)

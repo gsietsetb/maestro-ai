@@ -35,6 +35,10 @@ class Settings(BaseSettings):
 
     # ── Cursor Background Agent API ───────────────────────────────────────
     cursor_api_key: str = Field(default="", description="Cursor API key for background agents")
+    allow_cursor_fallback: bool = Field(
+        default=False,
+        description="Allow Cursor Cloud fallback after Codex/Claude local executors",
+    )
 
     # ── WebSocket ─────────────────────────────────────────────────────────
     ws_secret: str = Field(default="change-me", description="Shared secret for WS auth")
@@ -53,9 +57,10 @@ class Settings(BaseSettings):
     ha_url: str = Field(default="", description="Home Assistant URL (e.g. http://192.168.1.100:8123)")
     ha_token: str = Field(default="", description="HA long-lived access token")
 
-    # ── WhatsApp Web Bridge (Baileys) ─────────────────────────────────────
-    wa_bridge_url: str = Field(default="http://localhost:3001", description="WA bridge HTTP URL")
+    # ── WhatsApp Web Bridge (WAHA / Baileys) ─────────────────────────────
+    wa_bridge_url: str = Field(default="http://localhost:3002", description="WA bridge HTTP URL (WAHA on 3002)")
     wa_bridge_enabled: bool = Field(default=True, description="Enable WA Web bridge")
+    waha_api_key: str = Field(default="", description="WAHA API key")
 
     # ── Music AI Microservice ──────────────────────────────────────────────
     music_ai_url: str = Field(default="http://localhost:8001", description="Music AI service URL")

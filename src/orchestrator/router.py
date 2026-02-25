@@ -1,10 +1,10 @@
 """Smart action router – dispatches intents to the best executor via the agent mesh.
 
 Routes based on:
-- Action type (code_change → Cursor Opus 4.6 or Claude Code, query → Gemini/Claude, etc.)
+- Action type (code_change → Codex/Claude/Cursor, query → Gemini/Codex/Claude, etc.)
 - Project availability across the agent mesh
 - Agent capabilities and current load
-- Conversational mode: Gemini for quick chat, Claude Code for deep codebase analysis
+- Conversational mode: Gemini for quick chat, Codex/Claude for deep codebase analysis
 - Improvement loop: after code changes, auto-reviews, tests, and improves autonomously
 """
 
@@ -186,7 +186,7 @@ class ActionRouter:
             parameters=intent.ha_params,
         )
 
-    # ── Conversation / Query (Gemini + Claude Code fallback) ────────────
+    # ── Conversation / Query (Gemini + Codex/Claude fallback) ───────────
 
     async def _handle_conversation(
         self, intent: ParsedIntent, project_info: dict | None, project_name: str | None
@@ -195,8 +195,9 @@ class ActionRouter:
 
         Strategy:
         1. Gemini for quick conversational responses (greeting, simple questions)
-        2. Claude Code (via agent mesh) for deep codebase analysis when needed
-        3. Graceful fallback if Claude Code is unavailable or fails
+        2. Codex CLI (via agent mesh) for deep codebase analysis when needed
+        3. Claude Code (via agent mesh) fallback for deep analysis
+        4. Graceful fallback if Codex/Claude are unavailable or fail
         """
         prompt = intent.query_text or intent.prompt or intent.raw_message
 
@@ -207,7 +208,7 @@ class ActionRouter:
                 f"step-by-step plan for: {prompt}"
             )
 
-        # For deep codebase questions or plans, try Claude Code first
+        # For deep codebase questions or plans, try Codex first, then Claude.
         needs_deep_analysis = (
             intent.action == "plan"
             or (project_info and any(
@@ -219,22 +220,40 @@ class ActionRouter:
         )
 
         if needs_deep_analysis and self._mesh and self._mesh.is_connected:
+            cwd = project_info.get("path", "") if project_info else ""
+
+            # Strategy A: Codex CLI (best quality for codebase reasoning)
             try:
-                cwd = project_info.get("path", "") if project_info else ""
-                result = await self._mesh.run_claude_code(
+                codex_result = await self._mesh.run_codex_code(
                     prompt=prompt,
                     cwd=cwd,
                     read_only=True,
                     timeout=180,
                     project_name=project_name,
                 )
-                # If Claude Code succeeded, return result
-                if result.success:
-                    return result
-                # If it failed due to login or similar, fall through to Gemini
+                if codex_result.success:
+                    return codex_result
+                logger.warning(
+                    "Codex failed for conversation, trying Claude then Gemini: %s",
+                    codex_result.output[:100],
+                )
+            except Exception as e:
+                logger.warning("Codex error for conversation, trying Claude: %s", e)
+
+            # Strategy B: Claude Code fallback
+            try:
+                claude_result = await self._mesh.run_claude_code(
+                    prompt=prompt,
+                    cwd=cwd,
+                    read_only=True,
+                    timeout=180,
+                    project_name=project_name,
+                )
+                if claude_result.success:
+                    return claude_result
                 logger.warning(
                     "Claude Code failed for conversation, falling back to Gemini: %s",
-                    result.output[:100],
+                    claude_result.output[:100],
                 )
             except Exception as e:
                 logger.warning("Claude Code error, falling back to Gemini: %s", e)
@@ -270,7 +289,7 @@ class ActionRouter:
 
         return ExecutionResult(
             success=False,
-            output="No pude procesar tu mensaje. Verifica que Gemini o Claude Code esten configurados.",
+            output="No pude procesar tu mensaje. Verifica Gemini o un agente con Codex/Claude.",
         )
 
     # ── Code changes ──────────────────────────────────────────────────────
@@ -283,10 +302,12 @@ class ActionRouter:
         task_id: str,
         notify: NotifyFn | None = None,
     ) -> ExecutionResult:
-        """Route code changes to Cursor (Opus 4.6 Max) or Claude Code CLI.
+        """Route code changes using priority: Codex, Claude Code, Cursor.
 
-        Cursor is tried first for GitHub repos, but falls back to Claude Code
-        if Cursor fails (401 unauthorized, API errors, etc.)
+        Priority order:
+        1. Codex CLI via agent mesh (best quality for code tasks)
+        2. Claude Code CLI via agent mesh
+        3. Cursor Cloud Agent for GitHub repos (last fallback)
 
         After the initial task, the improvement loop auto-reviews, tests,
         and improves the changes autonomously.
@@ -297,39 +318,85 @@ class ActionRouter:
         repo = project_info.get("repo", "")
         prompt = intent.prompt or intent.raw_message
         result: ExecutionResult | None = None
+        fallback_errors: list[str] = []
 
-        # Strategy 1: Cursor Background Agent (Opus 4.6 Max) for GitHub repos
-        if self._cursor and repo and "github.com" in repo:
-            result = await self._cursor.launch_agent(
-                prompt=prompt,
-                repo_url=repo,
-                branch=intent.branch,
-                task_id=task_id,
-                image_data=intent.image_data,
-            )
-            # If Cursor failed, fall through to Claude Code.
-            if not result.success:
-                logger.warning(
-                    "Cursor agent failed (%s), falling back to Claude Code for %s",
-                    result.output[:80], project_name,
-                )
-                result = None
-
-        # Strategy 2: Claude Code CLI (local) – fallback or primary for non-GitHub repos
-        if result is None:
-            if self._mesh and self._mesh.is_connected:
-                result = await self._mesh.run_claude_code(
+        # Strategy 1: Codex CLI via local agent mesh
+        if self._mesh and self._mesh.is_connected:
+            try:
+                codex_result = await self._mesh.run_codex_code(
                     prompt=prompt,
                     cwd=project_info.get("path", ""),
                     read_only=False,
                     timeout=600,
                     project_name=project_name,
                 )
+                if codex_result.success:
+                    result = codex_result
+                else:
+                    fallback_errors.append(f"Codex: {codex_result.output[:120]}")
+                    logger.warning(
+                        "Codex failed for %s, trying Claude: %s",
+                        project_name, codex_result.output[:120],
+                    )
+            except Exception as e:
+                fallback_errors.append(f"Codex error: {e}")
+                logger.warning("Codex exception for %s: %s", project_name, e)
+
+        # Strategy 2: Claude Code CLI fallback
+        if result is None and self._mesh and self._mesh.is_connected:
+            try:
+                claude_result = await self._mesh.run_claude_code(
+                    prompt=prompt,
+                    cwd=project_info.get("path", ""),
+                    read_only=False,
+                    timeout=600,
+                    project_name=project_name,
+                )
+                if claude_result.success:
+                    result = claude_result
+                else:
+                    fallback_errors.append(f"Claude: {claude_result.output[:120]}")
+                    logger.warning(
+                        "Claude failed for %s, trying Cursor fallback: %s",
+                        project_name, claude_result.output[:120],
+                    )
+            except Exception as e:
+                fallback_errors.append(f"Claude error: {e}")
+                logger.warning("Claude exception for %s: %s", project_name, e)
+
+        # Strategy 3: Cursor Cloud Agent fallback (GitHub repos only)
+        if result is None and self._cursor and repo and "github.com" in repo:
+            cursor_result = await self._cursor.launch_agent(
+                prompt=prompt,
+                repo_url=repo,
+                branch=intent.branch,
+                task_id=task_id,
+                image_data=intent.image_data,
+            )
+            if cursor_result.success:
+                result = cursor_result
             else:
+                fallback_errors.append(f"Cursor: {cursor_result.output[:120]}")
+
+        if result is None:
+            if fallback_errors:
+                providers = "Codex y Claude"
+                if self._cursor:
+                    providers = "Codex, Claude ni Cursor"
                 return ExecutionResult(
                     success=False,
-                    output="No hay ejecutor disponible. Configura CURSOR_API_KEY o conecta un agente local.",
+                    output=(
+                        f"No se pudo ejecutar la tarea con {providers}.\n"
+                        + "\n".join(f"- {err}" for err in fallback_errors[:3])
+                    ),
                 )
+            return ExecutionResult(
+                success=False,
+                output=(
+                    "No hay ejecutor disponible. Conecta un agente local con Codex/Claude "
+                    "y, solo si lo necesitas, activa ALLOW_CURSOR_FALLBACK=true."
+                ),
+            )
 
         # ── Improvement loop: auto-review, test, improve ─────────────────
         if result.success and self._improver:
