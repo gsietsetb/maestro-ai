@@ -1,0 +1,3 @@
+# Sierra Bot Dashboard - Cloudflare Pages (static, no build)
+name = "sierrabot-dashboard"
+pages_build_output_dir = "."

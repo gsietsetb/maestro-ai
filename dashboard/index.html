@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sierra Bot – Command Center</title>
+<style>
+:root {
+  --bg: #06060b; --s1: #0d0d16; --s2: #151528; --s3: #1e1e3a;
+  --brd: #2a2a50; --brd2: #3a3a70;
+  --txt: #e8e8f4; --txt2: #8080a8; --txt3: #585878;
+  --acc: #6c5ce7; --acc2: #a29bfe;
+  --grn: #00d2a0; --grn2: #00d2a033;
+  --ylw: #ffc048; --ylw2: #ffc04833;
+  --red: #ff5e57; --red2: #ff5e5733;
+  --blu: #54a0ff; --blu2: #54a0ff33;
+  --pur: #a29bfe; --cyn: #00cec9; --org: #ff9f43;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── Header ──────────────────────── */
+.hdr{background:linear-gradient(135deg,var(--s1),var(--s2));border-bottom:1px solid var(--brd);padding:.5rem 1.2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+.hdr h1{font-size:1rem;font-weight:800;letter-spacing:-.02em}
+.hdr h1 b{color:var(--acc)}
+.hdr-r{display:flex;gap:.4rem;font-size:.62rem;color:var(--txt2);align-items:center;flex-wrap:wrap}
+.badge{background:var(--s1);padding:.18rem .45rem;border-radius:14px;border:1px solid var(--brd);display:flex;align-items:center;gap:.2rem}
+.badge .v{color:var(--acc2);font-weight:700}
+.live{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pulse-d 2s infinite;display:inline-block}
+@keyframes pulse-d{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,210,160,.6)}50%{opacity:.6;box-shadow:0 0 0 5px rgba(0,210,160,0)}}
+
+/* ── Command Bar ─────────────────── */
+.cmd{display:flex;gap:.35rem;padding:.4rem 1.2rem;background:var(--s1);border-bottom:1px solid var(--brd);align-items:center}
+.cmd select{background:var(--s2);color:var(--txt);border:1px solid var(--brd);border-radius:7px;padding:.35rem .45rem;font-size:.7rem;min-width:130px;outline:none}
+.cmd input{flex:1;background:var(--s2);color:var(--txt);border:1px solid var(--brd);border-radius:7px;padding:.38rem .6rem;font-size:.75rem;outline:none;font-family:inherit}
+.cmd input:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(108,92,231,.2)}
+.cmd input::placeholder{color:var(--txt2)}
+.cmd-btn{background:var(--acc);color:#fff;border:none;border-radius:7px;padding:.38rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap}
+.cmd-btn:hover{background:var(--acc2);transform:translateY(-1px)}
+.cmd-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.cmd-fb{padding:0 1.2rem;font-size:.65rem;min-height:0;transition:.3s;overflow:hidden}
+.cmd-fb.show{padding:.25rem 1.2rem;background:var(--s1);border-bottom:1px solid var(--brd)}
+.cmd-fb.ok{color:var(--grn)}.cmd-fb.err{color:var(--red)}.cmd-fb.info{color:var(--blu)}
+
+/* ── Tabs ────────────────────────── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--brd);background:var(--s1);padding:0 1.2rem;overflow-x:auto}
+.tab{padding:.45rem .8rem;font-size:.72rem;font-weight:600;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
+.tab:hover{color:var(--txt)}
+.tab.active{color:var(--acc2);border-color:var(--acc)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── Flow Section ────────────────── */
+.flow-section{padding:.8rem 1.2rem;background:linear-gradient(180deg,var(--s1) 0%,var(--bg) 100%)}
+.section-title{font-size:.65rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.6rem;display:flex;align-items:center;gap:.4rem}
+.flow{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:.3rem 0}
+.flow-col{display:flex;flex-direction:column;gap:.4rem;align-items:center;min-width:110px}
+.flow-arrow{display:flex;align-items:center;color:var(--brd);font-size:1.1rem;padding:0 .2rem;margin-top:1.3rem}
+.flow-arrow.active{color:var(--acc);animation:arrow-pulse 1.5s infinite}
+@keyframes arrow-pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ── Flow Nodes ──────────────────── */
+.node{background:var(--s2);border:1.5px solid var(--brd);border-radius:10px;padding:.45rem;width:105px;text-align:center;transition:.3s;position:relative;cursor:default}
+.node:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 4px 20px rgba(108,92,231,.15)}
+.node.active{border-color:var(--grn);box-shadow:0 0 12px rgba(0,210,160,.2)}
+.node.active::after{content:'';position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:var(--grn);animation:pulse-d 1.5s infinite}
+.node-icon{font-size:1.2rem;margin-bottom:.15rem}
+.node-name{font-size:.6rem;font-weight:700;color:var(--txt);line-height:1.15}
+.node-where{font-size:.5rem;color:var(--txt2);margin-top:.1rem;display:flex;align-items:center;justify-content:center;gap:.15rem}
+.node-model{font-size:.48rem;color:var(--org);font-weight:600;margin-top:.1rem}
+.node-count{font-size:.5rem;color:var(--acc2);font-weight:700;margin-top:.1rem}
+.where-cloud{color:var(--blu)}.where-mac{color:var(--grn)}.where-google{color:var(--ylw)}
+
+/* ── Device Mesh ─────────────────── */
+.device-mesh{padding:.6rem 1.2rem;display:flex;gap:.6rem;overflow-x:auto;background:var(--bg)}
+.device{background:var(--s1);border:1px solid var(--brd);border-radius:10px;padding:.5rem .6rem;min-width:100px;text-align:center;transition:.3s;position:relative}
+.device.online{border-color:var(--grn)}
+.device.online::after{content:'';position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pulse-d 2s infinite}
+.device.offline{opacity:.5}
+.device.planned{opacity:.6;border-style:dashed}
+.device-icon{font-size:1.6rem;margin-bottom:.2rem}
+.device-name{font-size:.62rem;font-weight:700}
+.device-type{font-size:.5rem;color:var(--txt2)}
+.device-status{font-size:.48rem;font-weight:600;margin-top:.15rem;padding:.1rem .3rem;border-radius:4px;display:inline-block}
+.device-status.on{background:var(--grn2);color:var(--grn)}
+.device-status.off{background:var(--red2);color:var(--red)}
+.device-status.soon{background:var(--ylw2);color:var(--ylw)}
+
+/* ── Pipeline ────────────────────── */
+.pipeline{padding:.6rem 1.2rem}
+.pipe-list{display:flex;flex-direction:column;gap:.4rem;max-height:280px;overflow-y:auto}
+.pipe-item{background:var(--s1);border:1px solid var(--brd);border-radius:8px;padding:.5rem .7rem;display:grid;grid-template-columns:auto 1fr auto;gap:.5rem;align-items:center;animation:slide-in .4s ease-out}
+@keyframes slide-in{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+.pipe-status{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700}
+.pipe-status.running{background:var(--blu2);color:var(--blu);animation:spin-icon 3s linear infinite}
+@keyframes spin-icon{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.pipe-status.ok{background:var(--grn2);color:var(--grn)}.pipe-status.fail{background:var(--red2);color:var(--red)}.pipe-status.pending{background:var(--ylw2);color:var(--ylw)}
+.pipe-body{min-width:0}
+.pipe-proj{font-weight:700;font-size:.72rem;color:var(--pur)}
+.pipe-msg{font-size:.65rem;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:450px}
+.pipe-meta{font-size:.58rem;color:var(--txt2);display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.pipe-where{font-size:.55rem;padding:.1rem .35rem;border-radius:4px;font-weight:600;white-space:nowrap}
+.pipe-where.cursor{background:#7c3aed22;color:#a78bfa}.pipe-where.gemini{background:#fbbf2422;color:#fbbf24}.pipe-where.mac{background:var(--grn2);color:var(--grn)}
+
+/* ── TODOs ───────────────────────── */
+.todo-section{padding:.6rem 1.2rem}
+.todo-list{display:flex;flex-direction:column;gap:.35rem;max-height:400px;overflow-y:auto}
+.todo-item{background:var(--s1);border:1px solid var(--brd);border-radius:8px;padding:.5rem .7rem;display:grid;grid-template-columns:auto auto 1fr auto;gap:.5rem;align-items:center;transition:.2s}
+.todo-item:hover{border-color:var(--acc)}
+.todo-pri{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800}
+.todo-pri.p1{background:#ff5e5733;color:#ff5e57}.todo-pri.p2{background:#ff9f4333;color:#ff9f43}.todo-pri.p3{background:#ffc04833;color:#ffc048}.todo-pri.p4{background:#54a0ff33;color:#54a0ff}
+.todo-cat{font-size:.5rem;padding:.1rem .3rem;border-radius:3px;font-weight:600;text-transform:uppercase}
+.todo-cat.research{background:#6c5ce722;color:#a29bfe}.todo-cat.dev{background:#00d2a022;color:#00d2a0}.todo-cat.infra{background:#54a0ff22;color:#54a0ff}.todo-cat.product{background:#ff9f4322;color:#ff9f43}
+.todo-body{min-width:0}
+.todo-title{font-size:.72rem;font-weight:600}
+.todo-desc{font-size:.6rem;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.todo-action{font-size:.55rem;padding:.2rem .5rem;border-radius:5px;background:var(--acc);color:#fff;font-weight:600;cursor:pointer;border:none;transition:.2s;white-space:nowrap}
+.todo-action:hover{background:var(--acc2);transform:translateY(-1px)}
+
+/* ── Grid Sections ───────────────── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;padding:.6rem 1.2rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 300px;gap:.6rem;padding:.6rem 1.2rem}
+@media(max-width:1200px){.grid-3{grid-template-columns:1fr 1fr}.grid-3>*:last-child{grid-column:1/-1}}
+@media(max-width:768px){.grid-2,.grid-3{grid-template-columns:1fr;padding:.4rem .8rem}.hdr{flex-direction:column;gap:.3rem}.flow{flex-wrap:wrap;justify-content:center}.cmd{flex-wrap:wrap}.device-mesh{flex-wrap:wrap}.tabs{flex-wrap:wrap}}
+
+/* ── Cards ───────────────────────── */
+.card{background:var(--s1);border:1px solid var(--brd);border-radius:10px;overflow:hidden}
+.card-h{padding:.4rem .6rem;border-bottom:1px solid var(--brd);font-size:.62rem;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center;background:var(--s2)}
+.card-h .c{color:var(--acc2);font-weight:700}
+.card-b{padding:.5rem}
+
+/* ── Chatbot Embed ───────────────── */
+.chatbot-embed{border:1px solid var(--brd);border-radius:8px;overflow:hidden;background:var(--s2)}
+.chatbot-header{padding:.4rem .6rem;background:var(--s2);border-bottom:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center}
+.chatbot-header span{font-size:.68rem;font-weight:700;color:var(--cyn)}
+.chatbot-header a{font-size:.55rem;color:var(--blu);text-decoration:none}
+.chatbot-msgs{height:200px;overflow-y:auto;padding:.4rem;display:flex;flex-direction:column;gap:.3rem}
+.chatbot-msg{max-width:80%;padding:.3rem .5rem;border-radius:8px;font-size:.65rem;line-height:1.3}
+.chatbot-msg.bot{background:var(--s3);color:var(--txt);align-self:flex-start;border-bottom-left-radius:2px}
+.chatbot-msg.user{background:var(--acc);color:#fff;align-self:flex-end;border-bottom-right-radius:2px}
+.chatbot-input{display:flex;gap:.3rem;padding:.3rem;border-top:1px solid var(--brd)}
+.chatbot-input input{flex:1;background:var(--bg);border:1px solid var(--brd);border-radius:6px;padding:.3rem .5rem;color:var(--txt);font-size:.65rem;outline:none}
+.chatbot-input button{background:var(--cyn);color:#000;border:none;border-radius:6px;padding:.3rem .6rem;font-size:.65rem;font-weight:700;cursor:pointer}
+
+/* ── Previews + Deploys ──────────── */
+.previews{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+.preview-card{background:var(--s2);border:1px solid var(--brd);border-radius:8px;overflow:hidden;transition:.3s}
+.preview-card:hover{border-color:var(--acc)}
+.preview-frame{width:100%;height:110px;border:none;background:var(--s3);pointer-events:none}
+.preview-info{padding:.3rem .4rem;display:flex;justify-content:space-between;align-items:center}
+.preview-name{font-size:.62rem;font-weight:700}
+.preview-link{font-size:.55rem;color:var(--blu);text-decoration:none}
+
+.deploy-item{display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--brd);font-size:.68rem}
+.deploy-item:last-child{border-bottom:none}
+.deploy-status{font-size:.55rem;padding:.1rem .35rem;border-radius:4px;font-weight:600}
+.deploy-status.ready{background:var(--grn2);color:var(--grn)}.deploy-status.building{background:var(--ylw2);color:var(--ylw)}.deploy-status.error{background:var(--red2);color:var(--red)}
+
+/* ── Projects + Events ───────────── */
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem}
+.proj-card{background:var(--s2);border:1px solid var(--brd);border-radius:7px;padding:.4rem;transition:.2s}
+.proj-card:hover{border-color:var(--acc)}
+.proj-name{font-weight:700;font-size:.7rem;display:flex;align-items:center;gap:.2rem;margin-bottom:.15rem}
+.proj-meta{font-size:.55rem;color:var(--txt2);display:flex;flex-wrap:wrap;gap:.2rem}
+.tag{background:var(--bg);padding:.06rem .3rem;border-radius:4px;border:1px solid var(--brd)}
+
+.ev-list{max-height:350px;overflow-y:auto}
+.ev-item{padding:.3rem 0;border-bottom:1px solid var(--brd);display:flex;gap:.35rem;font-size:.65rem}
+.ev-item:last-child{border-bottom:none}
+.ev-icon{width:1rem;text-align:center;flex-shrink:0}
+.ev-body{min-width:0}
+.ev-proj{font-weight:700;color:var(--pur)}
+.ev-time{font-size:.52rem;color:var(--txt2)}
+
+/* ── Monitors + Mesh ─────────────── */
+.monitor-row{display:flex;justify-content:space-between;align-items:center;padding:.25rem 0;border-bottom:1px solid var(--brd);font-size:.68rem}
+.monitor-row:last-child{border-bottom:none}
+.dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:.25rem}
+.dot.on{background:var(--grn)}.dot.off{background:var(--red)}
+.agent-card{background:var(--s2);border:1px solid var(--brd);border-radius:7px;padding:.4rem;margin-bottom:.3rem}
+.agent-card:last-child{margin-bottom:0}
+.agent-name{font-weight:700;font-size:.7rem;color:var(--cyn);display:flex;align-items:center;gap:.2rem}
+.agent-meta{font-size:.58rem;color:var(--txt2);margin-top:.1rem}
+.cap-tags{display:flex;flex-wrap:wrap;gap:.15rem;margin-top:.15rem}
+.cap{font-size:.5rem;padding:.04rem .25rem;border-radius:3px;background:var(--acc);color:#fff;font-weight:600}
+
+/* ── Scrollbar + Utils ───────────── */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+.empty{color:var(--txt2);font-size:.65rem;padding:.5rem;text-align:center}
+.model-tag{font-size:.5rem;padding:.08rem .3rem;border-radius:3px;font-weight:600;display:inline-flex;align-items:center;gap:.15rem}
+.model-tag.opus{background:#7c3aed22;color:#c4b5fd}.model-tag.gemini{background:#fbbf2422;color:#fbbf24}.model-tag.groq{background:#00d2a022;color:#00d2a0}
+
+/* ── Auth Overlay ────────────────── */
+.auth-overlay{position:fixed;inset:0;background:rgba(6,6,11,.85);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.auth-overlay.hidden{display:none}
+.auth-box{background:var(--s1);border:1px solid var(--brd);border-radius:14px;padding:2rem;width:340px;text-align:center}
+.auth-box h2{font-size:1.1rem;font-weight:800;margin-bottom:.3rem}.auth-box h2 b{color:var(--acc)}
+.auth-box p{font-size:.72rem;color:var(--txt2);margin-bottom:1rem}
+.auth-box input{width:100%;background:var(--s2);color:var(--txt);border:1px solid var(--brd);border-radius:8px;padding:.5rem .8rem;font-size:.85rem;outline:none;text-align:center;letter-spacing:.15em;font-family:inherit;margin-bottom:.6rem}
+.auth-box input:focus{border-color:var(--acc)}
+.auth-box button{width:100%;background:var(--acc);color:#fff;border:none;border-radius:8px;padding:.5rem;font-size:.82rem;font-weight:700;cursor:pointer;transition:.2s}
+.auth-box button:hover{background:var(--acc2)}
+.auth-err{color:var(--red);font-size:.65rem;margin-top:.4rem;min-height:1rem}
+</style>
+</head>
+<body>
+
+<!-- ── API Setup (remote mode) ── -->
+<div class="auth-overlay hidden" id="api-setup">
+  <div class="auth-box" style="width:420px">
+    <h2 style="color:var(--acc)">Conectar al Orchestrator</h2>
+    <p style="margin-bottom:.5rem">Pega la URL del Cloudflare Tunnel de tu Mac</p>
+    <p style="font-size:.55rem;color:var(--txt2);margin-bottom:.8rem">La encuentras en el dashboard local o ejecutando: <code style="background:var(--s2);padding:.1rem .3rem;border-radius:4px">bash start.sh status</code></p>
+    <input type="url" id="api-url-in" placeholder="https://xxxxx.trycloudflare.com" style="width:100%;background:var(--s2);color:var(--txt);border:1px solid var(--brd);border-radius:8px;padding:.5rem .8rem;font-size:.8rem;outline:none;font-family:inherit;margin-bottom:.6rem">
+    <button onclick="saveApiUrl()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:8px;padding:.5rem;font-size:.82rem;font-weight:700;cursor:pointer">Conectar</button>
+    <div id="api-setup-err" style="color:var(--red);font-size:.65rem;margin-top:.4rem;min-height:1rem"></div>
+  </div>
+</div>
+
+<!-- ── Auth Modal (only when launching) ── -->
+<div class="auth-overlay hidden" id="auth-modal">
+  <div class="auth-box">
+    <h2><b>Autorizacion</b></h2>
+    <p>Password requerido para ejecutar acciones</p>
+    <input type="password" id="auth-pw" placeholder="Password" autocomplete="off">
+    <button onclick="confirmAuth()">Autorizar</button>
+    <div class="auth-err" id="auth-err"></div>
+    <div style="margin-top:.5rem"><span style="font-size:.6rem;color:var(--txt2);cursor:pointer" onclick="cancelAuth()">Cancelar</span></div>
+  </div>
+</div>
+
+<!-- ── Header ──────────────────── -->
+<div class="hdr">
+  <h1><b>Sierra</b>Bot Command Center</h1>
+  <span id="api-indicator" style="font-size:.5rem;padding:.15rem .4rem;border:1px solid var(--brd);border-radius:5px;color:var(--txt2);cursor:pointer" onclick="resetApiUrl()" title="Click para cambiar API URL"></span>
+  <div class="hdr-r">
+    <span class="badge"><span class="live"></span> LIVE</span>
+    <span class="badge">Uptime <span class="v" id="h-up">-</span></span>
+    <span class="badge">Tasks <span class="v" id="h-tasks">-</span></span>
+    <span class="badge">Mesh <span class="v" id="h-mesh">-</span></span>
+    <span class="badge"><span class="model-tag opus">Opus 4.6 Max</span></span>
+  </div>
+</div>
+
+<!-- ── Command Bar ─────────────── -->
+<div class="cmd">
+  <select id="cmd-proj"><option value="">Auto-detect</option></select>
+  <input id="cmd-in" type="text" placeholder="Escribe un comando... (ej: 'deploya plinng-web', 'investiga Apple Watch SDK')" autocomplete="off">
+  <button class="cmd-btn" id="cmd-go" onclick="launchTask()">Launch</button>
+</div>
+<div class="cmd-fb" id="cmd-fb"></div>
+
+<!-- ── Device Mesh ─────────────── -->
+<div class="device-mesh" id="device-mesh">
+  <div class="device online" id="d-mac"><div class="device-icon">💻</div><div class="device-name">MacBook Pro</div><div class="device-type">Orchestrator + Agents</div><div class="device-status on">Online</div></div>
+  <div class="device online" id="d-iphone"><div class="device-icon">📱</div><div class="device-name">iPhone</div><div class="device-type">Telegram + WhatsApp</div><div class="device-status on">Connected</div></div>
+  <div class="device planned" id="d-watch"><div class="device-icon">⌚</div><div class="device-name">Apple Watch</div><div class="device-type">Companion App</div><div class="device-status soon">Planned</div></div>
+  <div class="device planned" id="d-alexa"><div class="device-icon">🔊</div><div class="device-name">Alexa</div><div class="device-type">Voice Assistant</div><div class="device-status soon">Planned</div></div>
+  <div class="device planned" id="d-google"><div class="device-icon">🏠</div><div class="device-name">Google Home</div><div class="device-type">Voice + Domotica</div><div class="device-status soon">Planned</div></div>
+  <div class="device online" id="d-cursor"><div class="device-icon">⚡</div><div class="device-name">Cursor Cloud</div><div class="device-type">Opus 4.6 Max</div><div class="device-status on">Active</div></div>
+  <div class="device online" id="d-vercel"><div class="device-icon">▲</div><div class="device-name">Vercel</div><div class="device-type">8 Projects</div><div class="device-status on">Deployed</div></div>
+  <div class="device online" id="d-supabase"><div class="device-icon">⚡</div><div class="device-name">Supabase</div><div class="device-type">Divenamic DB</div><div class="device-status on">Active</div></div>
+  <div class="device online" id="d-telegram"><div class="device-icon">💬</div><div class="device-name">Telegram Bots</div><div class="device-type">@sierraAIBot + @divenamicBot</div><div class="device-status on">Active</div></div>
+</div>
+
+<!-- ── Tabs ─────────────────────── -->
+<div class="tabs">
+  <div class="tab active" data-tab="overview">Overview</div>
+  <div class="tab" data-tab="todos">Roadmap & TODOs</div>
+  <div class="tab" data-tab="compare">SierraBot vs Others</div>
+  <div class="tab" data-tab="chatbot">Divenamic Bot</div>
+  <div class="tab" data-tab="ollama">Ollama Local</div>
+  <div class="tab" data-tab="deploys">Deploys & Previews</div>
+  <div class="tab" data-tab="projects">Projects</div>
+  <div class="tab" data-tab="feedback">Feedback</div>
+  <div class="tab" data-tab="events">Events</div>
+</div>
+
+<!-- ═══ TAB: Overview ═══════════ -->
+<div class="tab-panel active" id="tab-overview">
+
+  <!-- Flow -->
+  <div class="flow-section">
+    <div class="section-title">System Flow — Donde corre cada cosa</div>
+    <div class="flow" id="flow-diagram">
+      <div class="flow-col">
+        <div class="node" id="n-telegram"><div class="node-icon">💬</div><div class="node-name">Telegram</div><div class="node-where">📱 Tu iPhone</div></div>
+        <div class="node" id="n-whatsapp"><div class="node-icon">📲</div><div class="node-name">WhatsApp</div><div class="node-where">📱 Tu iPhone</div></div>
+        <div class="node" id="n-dashboard"><div class="node-icon">🌐</div><div class="node-name">Dashboard</div><div class="node-where where-cloud">☁️ Cloudflare</div></div>
+      </div>
+      <div class="flow-arrow active">→</div>
+      <div class="flow-col">
+        <div class="node" id="n-gemini"><div class="node-icon">🧠</div><div class="node-name">Intent Parser</div><div class="node-where where-google">☁️ Google</div><div class="node-model">Gemini 2.5 Flash</div></div>
+        <div class="node" id="n-voice"><div class="node-icon">🎙️</div><div class="node-name">Voz → Texto</div><div class="node-where where-google">☁️ Google</div><div class="node-model">Gemini multimodal</div></div>
+      </div>
+      <div class="flow-arrow active">→</div>
+      <div class="flow-col">
+        <div class="node" id="n-router"><div class="node-icon">🔀</div><div class="node-name">Smart Router</div><div class="node-where where-mac">💻 Tu Mac</div><div class="node-model">Python FastAPI</div></div>
+      </div>
+      <div class="flow-arrow active">→</div>
+      <div class="flow-col">
+        <div class="node" id="n-cursor"><div class="node-icon">⚡</div><div class="node-name">Cursor Cloud</div><div class="node-where where-cloud">☁️ Cursor API</div><div class="node-model">Opus 4.6 Max</div><div class="node-count" id="nc-cursor">code changes</div></div>
+        <div class="node" id="n-mesh"><div class="node-icon">🖥️</div><div class="node-name">Agent Mesh</div><div class="node-where where-mac">💻 Tu Mac</div><div class="node-model">Claude Code CLI</div><div class="node-count" id="nc-mesh">0 agents</div></div>
+        <div class="node" id="n-gemini2"><div class="node-icon">💭</div><div class="node-name">AI Chat</div><div class="node-where where-google">☁️ Google</div><div class="node-model">Gemini 2.5 Flash</div></div>
+        <div class="node" id="n-ha"><div class="node-icon">🏠</div><div class="node-name">Domotica</div><div class="node-where where-mac">🐳 Docker</div><div class="node-model">Home Assistant</div></div>
+      </div>
+      <div class="flow-arrow active">→</div>
+      <div class="flow-col">
+        <div class="node" id="n-github"><div class="node-icon">🔀</div><div class="node-name">GitHub PRs</div><div class="node-where where-cloud">☁️ GitHub</div></div>
+        <div class="node" id="n-vercel"><div class="node-icon">▲</div><div class="node-name">Vercel Deploy</div><div class="node-where where-cloud">☁️ Vercel</div></div>
+        <div class="node" id="n-response"><div class="node-icon">📨</div><div class="node-name">Respuesta</div><div class="node-where">📱 Tu iPhone</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Pipeline -->
+  <div class="pipeline">
+    <div class="section-title">Live Pipeline — Ahora mismo</div>
+    <div class="pipe-list" id="pipe-list"></div>
+  </div>
+
+  <!-- Quick Grid -->
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-h">AI Models <span class="c">3</span></div>
+      <div class="card-b" id="ai-models"></div>
+    </div>
+    <div class="card">
+      <div class="card-h">Agent Mesh</div>
+      <div class="card-b" id="mesh-panel"></div>
+    </div>
+    <div class="card">
+      <div class="card-h">System Status</div>
+      <div class="card-b" id="sys-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: TODOs ═══════════════ -->
+<div class="tab-panel" id="tab-todos">
+  <div class="todo-section">
+    <div class="section-title" style="justify-content:space-between">Roadmap Priorizado <span style="font-weight:400;text-transform:none;color:var(--txt2)">Click 'Launch' para ejecutar con Cursor Opus 4.6 Max</span></div>
+    <div class="todo-list" id="todo-list"></div>
+  </div>
+</div>
+
+<!-- ═══ TAB: Chatbot ═════════════ -->
+<div class="tab-panel" id="tab-chatbot">
+  <div class="grid-2" style="padding-top:.6rem">
+    <div class="card">
+      <div class="card-h">Divenamic Chatbot <span class="c">Groq Llama 3.3 70B</span></div>
+      <div class="card-b">
+        <div class="chatbot-embed">
+          <div class="chatbot-header">
+            <span>@divenamicBot — Live</span>
+            <a href="https://t.me/divenamicBot" target="_blank">Abrir en Telegram ↗</a>
+          </div>
+          <div class="chatbot-msgs" id="chat-msgs">
+            <div class="chatbot-msg bot">Hola! Soy el asistente de Divenamic. Puedo ayudarte con cursos de buceo, condiciones del mar, reservas y mas. Que necesitas?</div>
+          </div>
+          <div class="chatbot-input">
+            <input id="chat-in" placeholder="Escribe al bot de Divenamic..." autocomplete="off">
+            <button onclick="sendChat()">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:.6rem">
+        <div class="card-h">Bot Stats</div>
+        <div class="card-b" id="chat-stats"></div>
+      </div>
+      <div class="card">
+        <div class="card-h">Bot Channels</div>
+        <div class="card-b">
+          <div class="monitor-row"><span>Telegram</span><a href="https://t.me/divenamicBot" target="_blank" style="color:var(--blu);font-size:.65rem">@divenamicBot ↗</a></div>
+          <div class="monitor-row"><span>WhatsApp</span><a href="https://wa.me/34692842705" target="_blank" style="color:var(--blu);font-size:.65rem">+34 692 842 705 ↗</a></div>
+          <div class="monitor-row"><span>Web Widget</span><a href="https://divenamic.com" target="_blank" style="color:var(--blu);font-size:.65rem">divenamic.com ↗</a></div>
+          <div class="monitor-row"><span>API</span><span style="font-size:.6rem;color:var(--txt2)">Cloudflare Workers</span></div>
+          <div class="monitor-row"><span>LLM</span><span class="model-tag groq">Groq Llama 3.3 70B</span></div>
+          <div class="monitor-row"><span>Vision</span><span class="model-tag gemini">Gemini (species ID)</span></div>
+          <div class="monitor-row"><span>DB</span><span style="font-size:.6rem;color:var(--txt2)">Supabase PostgreSQL</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: Deploys ═════════════ -->
+<div class="tab-panel" id="tab-deploys">
+  <div class="grid-2" style="padding-top:.6rem">
+    <div class="card">
+      <div class="card-h">Web Previews <span class="c" id="prev-c">0</span></div>
+      <div class="card-b"><div class="previews" id="previews"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h">Vercel Deploys <span class="c" id="dep-c">0</span></div>
+      <div class="card-b" id="deploys"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: Projects ════════════ -->
+<div class="tab-panel" id="tab-projects">
+  <div style="padding:.6rem 1.2rem">
+    <div class="card">
+      <div class="card-h">All Projects <span class="c" id="proj-c">0</span></div>
+      <div class="card-b"><div class="proj-grid" id="proj-grid"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: Compare ═════════════ -->
+<div class="tab-panel" id="tab-compare">
+  <div style="padding:.8rem 1.2rem">
+    <div class="section-title">SierraBot vs Accomplish vs OpenClaw</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.68rem">
+        <thead><tr style="background:var(--s2);text-align:left">
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Feature</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd);color:var(--acc2)">SierraBot</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Accomplish</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">OpenClaw</th>
+        </tr></thead>
+        <tbody id="compare-table"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:.8rem;font-size:.62rem;color:var(--txt2)">
+      SierraBot es tu orchestrator privado. Accomplish es desktop-only. OpenClaw tiene 187K stars en GitHub.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: Ollama Local ════════ -->
+<div class="tab-panel" id="tab-ollama">
+  <div class="grid-2" style="padding-top:.6rem">
+    <div class="card">
+      <div class="card-h">Ollama Local LLM <span class="c" id="ollama-status">checking...</span></div>
+      <div class="card-b">
+        <div style="margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem" id="ollama-models"></div>
+        <div style="margin-bottom:.5rem"><select id="ollama-select" style="background:var(--s2);color:var(--txt);border:1px solid var(--brd);border-radius:6px;padding:.2rem .5rem;font-size:.65rem"></select></div>
+        <div class="chatbot-embed">
+          <div class="chatbot-header"><span>Chat Local (privado, sin cloud)</span><span style="font-size:.5rem;color:var(--txt2)" id="ollama-model-name">-</span></div>
+          <div class="chatbot-msgs" id="ollama-msgs">
+            <div class="chatbot-msg bot">Ollama local model. Todo se ejecuta en tu Mac, nada sale a internet.</div>
+          </div>
+          <div class="chatbot-input">
+            <input id="ollama-in" placeholder="Chat con modelo local..." autocomplete="off">
+            <button onclick="sendOllama()">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:.6rem">
+        <div class="card-h">Por que Ollama?</div>
+        <div class="card-b" style="font-size:.65rem;color:var(--txt2);line-height:1.5">
+          <p>100% privado — nada sale de tu Mac</p>
+          <p>Sin costes de API — corre gratis localmente</p>
+          <p>Offline — funciona sin internet</p>
+          <p>Rapido — qwen3:4b responde en ~2s</p>
+          <p style="margin-top:.4rem;color:var(--txt)">Ideal para tareas sensibles, clasificacion rapida, y como fallback cuando las APIs cloud estan caidas.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h">Ollama vs Cloud</div>
+        <div class="card-b">
+          <div class="monitor-row"><span>Privacidad</span><span style="color:var(--grn)">100% local</span></div>
+          <div class="monitor-row"><span>Coste</span><span style="color:var(--grn)">Gratis</span></div>
+          <div class="monitor-row"><span>Velocidad</span><span style="color:var(--ylw)">2-5s</span></div>
+          <div class="monitor-row"><span>Calidad</span><span style="color:var(--ylw)">Buena (4B params)</span></div>
+          <div class="monitor-row"><span>Offline</span><span style="color:var(--grn)">Si</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: Feedback ════════════ -->
+<div class="tab-panel" id="tab-feedback">
+  <div class="grid-2" style="padding-top:.6rem">
+    <div class="card">
+      <div class="card-h">Enviar Feedback</div>
+      <div class="card-b">
+        <div style="margin-bottom:.4rem">
+          <div style="display:flex;gap:.3rem;margin-bottom:.4rem" id="fb-btns">
+            <button class="cmd-btn" style="font-size:.7rem" onclick="setFbRating('positive')">Bien</button>
+            <button class="cmd-btn" style="font-size:.7rem;background:var(--red)" onclick="setFbRating('negative')">Mal</button>
+            <button class="cmd-btn" style="font-size:.7rem;background:var(--ylw);color:#000" onclick="setFbRating('suggestion')">Idea</button>
+          </div>
+          <input id="fb-task" placeholder="Task ID (opcional)" style="width:100%;background:var(--s2);border:1px solid var(--brd);border-radius:6px;padding:.3rem .5rem;color:var(--txt);font-size:.65rem;margin-bottom:.3rem;outline:none">
+          <textarea id="fb-comment" placeholder="Tu comentario..." style="width:100%;background:var(--s2);border:1px solid var(--brd);border-radius:6px;padding:.3rem .5rem;color:var(--txt);font-size:.65rem;min-height:80px;resize:vertical;outline:none;font-family:inherit"></textarea>
+          <button class="cmd-btn" style="margin-top:.3rem;width:100%" onclick="sendFeedback()">Enviar Feedback</button>
+          <div id="fb-msg" style="font-size:.6rem;margin-top:.3rem;min-height:1rem"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h">Feedback Reciente <span class="c" id="fb-count">0</span></div>
+      <div class="card-b"><div id="fb-list" style="max-height:400px;overflow-y:auto"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: Events ══════════════ -->
+<div class="tab-panel" id="tab-events">
+  <div class="grid-2" style="padding-top:.6rem">
+    <div class="card">
+      <div class="card-h">Recent Tasks <span class="c" id="recent-c">0</span></div>
+      <div class="card-b"><div class="pipe-list" id="recent-tasks" style="max-height:500px"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h">Event Feed <span class="c" id="ev-c">0</span></div>
+      <div class="card-b"><div class="ev-list" id="ev-list"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auth ─────────────────────────
+/* ── Auth: solo para acciones, dashboard visible siempre ─── */
+let _authResolve=null;
+function getAuth(){return sessionStorage.getItem('sb_auth')||''}
+function requireAuth(){
+  const saved=getAuth();
+  if(saved)return Promise.resolve(saved);
+  return new Promise((res)=>{
+    _authResolve=res;
+    document.getElementById('auth-pw').value='';
+    document.getElementById('auth-err').textContent='';
+    document.getElementById('auth-modal').classList.remove('hidden');
+  });
+}
+function confirmAuth(){
+  const pw=document.getElementById('auth-pw').value;
+  if(!pw){document.getElementById('auth-err').textContent='Escribe el password';return}
+  sessionStorage.setItem('sb_auth',pw);
+  document.getElementById('auth-modal').classList.add('hidden');
+  if(_authResolve){_authResolve(pw);_authResolve=null}
+}
+function cancelAuth(){
+  document.getElementById('auth-modal').classList.add('hidden');
+  if(_authResolve){_authResolve(null);_authResolve=null}
+}
+document.getElementById('auth-pw').addEventListener('keydown',e=>{if(e.key==='Enter')confirmAuth()});
+
+/* ── Comparison table data ────────────────────────────── */
+const compareData=[
+  ["Dashboard visual", "Si (flow+mesh)", "Basico", "Si"],
+  ["Accesible global (tunnel)", "Si (Cloudflare)", "No (local)", "Si (multi-plat)"],
+  ["Telegram/WhatsApp", "Si ambos", "No", "Si (13+ plat)"],
+  ["Apple Watch", "En desarrollo", "No", "Si (Device Nodes)"],
+  ["Alexa/Google Home", "En desarrollo", "No", "No nativo"],
+  ["Browser Use (automacion web)", "Pendiente", "Si", "Si"],
+  ["Modelo local (Ollama)", "Si (qwen3:4b)", "No", "Si"],
+  ["Cloud AI (Opus/Gemini/GPT)", "Si multi-model", "GPT/Claude", "Si multi-model"],
+  ["Cursor agent (code changes)", "Si (cloud+local)", "No", "No"],
+  ["Approval workflow", "Parcial", "Si (visual)", "No"],
+  ["Subagent orchestration", "Si", "No", "Si"],
+  ["Cron / scheduling", "Basico", "No", "Si"],
+  ["Heartbeat monitoring", "Si", "No", "Si"],
+  ["Skills marketplace", "No (manual)", "No", "Si (ClawHub)"],
+  ["Home Assistant", "Si", "No", "No nativo"],
+  ["Vercel/Supabase integration", "Si", "No", "No nativo"],
+  ["Multi-proyecto simultáneo", "Si (14 proyectos)", "No", "Limitado"],
+  ["Voice interaction", "Pendiente", "No", "Si"],
+  ["Feedback loop", "Si", "No", "No nativo"],
+  ["Open source", "Privado", "Si", "Si (187K stars)"],
+  ["Coste", "Gratis (self-host)", "Gratis", "Gratis"],
+  ["Offline mode", "Si (via Ollama)", "Parcial", "Si"],
+];
+function renderCompare(){
+  const tb=document.getElementById('compare-table');
+  if(!tb)return;
+  const icon=(v)=>{
+    v=v.toLowerCase();
+    if(v.startsWith('si'))return '<span style="color:var(--grn)">&#10004;</span> '+v.slice(2).trim();
+    if(v.startsWith('no'))return '<span style="color:var(--red)">&#10008;</span> '+v.slice(2).trim();
+    if(v.includes('pendiente')||v.includes('desarrollo')||v.includes('parcial')||v.includes('basico')||v.includes('limitado'))return '<span style="color:var(--ylw)">&#9673;</span> '+v;
+    return v;
+  };
+  tb.innerHTML=compareData.map(r=>`<tr>
+    <td style="padding:.3rem .5rem;border:1px solid var(--brd);font-weight:600">${r[0]}</td>
+    <td style="padding:.3rem .5rem;border:1px solid var(--brd);background:rgba(139,92,246,.06)">${icon(r[1])}</td>
+    <td style="padding:.3rem .5rem;border:1px solid var(--brd)">${icon(r[2])}</td>
+    <td style="padding:.3rem .5rem;border:1px solid var(--brd)">${icon(r[3])}</td>
+  </tr>`).join('');
+}
+renderCompare();
+
+/* ── Ollama Chat ──────────────────────────────────────── */
+async function checkOllama(){
+  try{
+    const r=await fetch('/api/ollama/status');
+    const d=await r.json();
+    const el=document.getElementById('ollama-status');
+    const mn=document.getElementById('ollama-model-name');
+    const ml=document.getElementById('ollama-models');
+    const sel=document.getElementById('ollama-select');
+    if(d.online){
+      el.textContent='ONLINE';el.style.color='var(--grn)';
+      mn.textContent=d.default;
+      ml.innerHTML=d.models.map(m=>`<span class="tag" style="margin-right:.2rem">${m}</span>`).join('');
+      if(sel.options.length===0){
+        d.models.forEach(m=>{const o=document.createElement('option');o.value=m;o.text=m;sel.add(o)});
+      }
+    }else{
+      el.textContent='OFFLINE';el.style.color='var(--red)';
+      ml.innerHTML='<span style="font-size:.6rem;color:var(--red)">Ollama no esta corriendo. Ejecuta: open -a Ollama</span>';
+    }
+  }catch(e){}
+}
+checkOllama();setInterval(checkOllama,15000);
+
+let _ollamaId=0;
+async function sendOllama(){
+  const inp=document.getElementById('ollama-in');
+  const msg=inp.value.trim();if(!msg)return;
+  const model=document.getElementById('ollama-select').value||'qwen3:4b';
+  const msgs=document.getElementById('ollama-msgs');
+  const tid='ollama-r-'+(++_ollamaId);
+  msgs.innerHTML+=`<div class="chatbot-msg user">${msg}</div>`;
+  inp.value='';msgs.scrollTop=msgs.scrollHeight;
+  msgs.innerHTML+=`<div class="chatbot-msg bot" id="${tid}" style="opacity:.5">Pensando (${model})...</div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  try{
+    const r=await fetch('/api/ollama/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,model})});
+    const d=await r.json();
+    const el=document.getElementById(tid);
+    if(d.response){el.textContent=d.response;el.style.opacity='1'}
+    else{el.textContent='Error: '+(d.error||'sin respuesta');el.style.color='var(--red)';el.style.opacity='1'}
+  }catch(e){
+    const el=document.getElementById(tid);
+    if(el){el.textContent='Error de conexion';el.style.color='var(--red)';el.style.opacity='1'}
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+}
+document.getElementById('ollama-in').addEventListener('keydown',e=>{if(e.key==='Enter')sendOllama()});
+
+/* ── Feedback ─────────────────────────────────────────── */
+let _fbRating='suggestion';
+function setFbRating(r){_fbRating=r;document.querySelectorAll('#fb-btns button').forEach(b=>b.style.opacity='.4');event.target.style.opacity='1'}
+async function sendFeedback(){
+  const comment=document.getElementById('fb-comment').value.trim();
+  const task_id=document.getElementById('fb-task').value.trim();
+  if(!comment){document.getElementById('fb-msg').textContent='Escribe un comentario';return}
+  try{
+    const r=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rating:_fbRating,comment,task_id})});
+    const d=await r.json();
+    document.getElementById('fb-msg').textContent='Feedback enviado (#'+d.total+')';
+    document.getElementById('fb-msg').style.color='var(--grn)';
+    document.getElementById('fb-comment').value='';
+    loadFeedback();
+  }catch(e){document.getElementById('fb-msg').textContent='Error';document.getElementById('fb-msg').style.color='var(--red)'}
+}
+async function loadFeedback(){
+  try{
+    const r=await fetch('/api/feedback');const d=await r.json();
+    document.getElementById('fb-count').textContent=d.total;
+    const list=document.getElementById('fb-list');
+    if(!d.feedback.length){list.innerHTML='<span style="font-size:.6rem;color:var(--txt2)">Sin feedback todavia</span>';return}
+    list.innerHTML=d.feedback.reverse().map(f=>{
+      const icon=f.rating==='positive'?'<span style="color:var(--grn)">&#10004;</span>':f.rating==='negative'?'<span style="color:var(--red)">&#10008;</span>':'<span style="color:var(--ylw)">&#9733;</span>';
+      const ts=new Date(f.ts*1000).toLocaleTimeString();
+      return `<div style="padding:.25rem 0;border-bottom:1px solid var(--brd);font-size:.62rem">${icon} <b>${f.rating}</b> ${f.task_id?'['+f.task_id+']':''} ${f.comment} <span style="color:var(--txt2)">${ts}</span></div>`;
+    }).join('');
+  }catch(e){}
+}
+loadFeedback();
+
+/* ── Remote API Configuration with Supabase Auto-Discovery ── */
+const SUPABASE_URL='https://qaixgdxfnytwtfygbtac.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhaXhnZHhmbnl0d3RmeWdidGFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjcwMTIsImV4cCI6MjA4NTgwMzAxMn0.FVoHyOAMxSfhIuj8Rjq785lR7yURK0L0reDjlJkbAMA';
+
+async function discoverTunnelUrl(){
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/system_config?key=eq.tunnel_url&select=value`,{headers:{'apikey':SUPABASE_KEY}});
+    const data=await r.json();
+    if(data&&data[0]&&data[0].value){return data[0].value.replace(/\/$/,'')}
+  }catch(e){console.warn('Supabase discovery failed:',e)}
+  return null;
+}
+
+async function getApiBase(){
+  const params=new URLSearchParams(location.search);
+  const fromUrl=params.get('api');
+  if(fromUrl&&!fromUrl.includes('sierrabot-dashboard')){
+    localStorage.setItem('sb_api_url',fromUrl.replace(/\/$/,''));
+    return fromUrl.replace(/\/$/,'')+'/api';
+  }
+  const stored=localStorage.getItem('sb_api_url');
+  if(stored&&!stored.includes('sierrabot-dashboard')){
+    // Verify stored URL is still alive
+    try{const r=await fetch(stored+'/api/state',{signal:AbortSignal.timeout(3000)});if(r.ok)return stored.replace(/\/$/,'')+'/api'}catch(e){}
+  }
+  if(location.hostname==='localhost'||location.hostname==='127.0.0.1')return '/api';
+  // Auto-discover from Supabase
+  const tunnel=await discoverTunnelUrl();
+  if(tunnel){
+    localStorage.setItem('sb_api_url',tunnel);
+    return tunnel+'/api';
+  }
+  return null;
+}
+function showApiSetup(){
+  const d=document.getElementById('api-setup');if(d)d.classList.remove('hidden');
+}
+function saveApiUrl(){
+  const v=document.getElementById('api-url-in').value.trim();
+  if(!v){document.getElementById('api-setup-err').textContent='Pega la URL del tunnel';return}
+  const clean=v.replace(/\/$/,'');
+  localStorage.setItem('sb_api_url',clean);
+  document.getElementById('api-setup').classList.add('hidden');
+  window.location.href=location.pathname+'?api='+encodeURIComponent(clean);
+}
+function resetApiUrl(){localStorage.removeItem('sb_api_url');window.location.href=location.pathname}
+let API=null;
+;(async()=>{
+  API=await getApiBase();
+  if(!API){showApiSetup();API='/api'}
+  else{
+    const ind=document.getElementById('api-indicator');
+    if(ind){try{const u=new URL(API.replace('/api',''));ind.textContent='API: '+u.hostname.substring(0,25);ind.style.color='var(--grn)';ind.style.borderColor='var(--grn)'}catch(e){}}
+    document.getElementById('api-setup')?.classList.add('hidden');
+    // Trigger first data load after API is known
+    try{loadProjects();refresh()}catch(e){console.warn('Init load:',e)}
+  }
+})();
+const WEBS=[
+  {name:'Plinng',url:'https://app.plinng.com',project:'plinng-web'},
+  {name:'Divenamic',url:'https://www.divenamic.com',project:'divenamic'},
+  {name:'Dopelist',url:'https://dopelist.com',project:'dopelist-react-native'},
+];
+
+// ── TODO list (manual priorities) ──
+const TODOS=[
+  {id:1,pri:1,cat:'dev',title:'Divenamic: Lanzar a produccion',desc:'Verificar que todo funciona, DNS, Vercel deploy, Supabase prod, chatbot webhook activo',project:'divenamic-ai',action:'Lanzar verificacion completa de Divenamic para produccion. Revisa deploy en Vercel, estado de Supabase, chatbot de Telegram activo, y que la web carga correctamente'},
+  {id:2,pri:1,cat:'dev',title:'Divenamic Chatbot: Mejorar respuestas',desc:'El chatbot de Telegram/Web usa Groq Llama 3.3 70B. Mejorar calidad de respuestas, anadir mas juegos, optimizar learning system',project:'divenamic-ai',action:'Mejora el chatbot de Divenamic. Revisa chatbot-engine.ts y chatbot-learning.ts. Optimiza prompts, anade mas herramientas al bot'},
+  {id:3,pri:1,cat:'research',title:'Apple Watch: Companion App',desc:'Investigar WatchKit, WatchConnectivity, complicaciones. Crear app que envie comandos al orchestrator via HTTP',project:'',action:'Investiga a fondo como crear una companion app para Apple Watch que se conecte al orchestrator. Necesito: WatchKit setup, WatchConnectivity, envio de comandos via HTTP, complicaciones'},
+  {id:4,pri:1,cat:'dev',title:'Plinng Web: Love & Polish',desc:'El proyecto tiene 13 cambios pendientes. Hacer code review, fix bugs, mejorar UX',project:'plinng-web',action:'Revisa el estado de plinng-web. Tiene 13 cambios sin commitear. Haz code review, fix bugs, mejora UX general'},
+  {id:5,pri:2,cat:'research',title:'Alexa: AI Voice Assistant',desc:'Integrar Alexa como interfaz de voz. Custom Alexa Skill conectada al orchestrator backend',project:'',action:'Investiga como crear un Alexa Skill custom que se conecte a mi backend FastAPI para tener una asistente de voz potenciada por IA en vez de la Alexa default'},
+  {id:6,pri:2,cat:'research',title:'Google Home: Custom Voice',desc:'Integrar Google Home/Assistant con voz custom (ElevenLabs) conectado al orchestrator',project:'',action:'Investiga como integrar Google Home con mi backend para tener un asistente custom con voz personalizada. Actions on Google + ElevenLabs TTS'},
+  {id:7,pri:2,cat:'infra',title:'Home Assistant: Configurar token',desc:'El HA esta en Docker pero falta el token de acceso. Configurar y conectar dispositivos reales',project:'',action:'Configura Home Assistant local. El docker-compose ya existe. Necesito: generar long-lived token, configurar dispositivos, integrarlo con el orchestrator'},
+  {id:8,pri:2,cat:'research',title:'Watch + Home: Sincronizacion',desc:'Sincronizar Apple Watch con dispositivos del hogar via orchestrator. Notificaciones bidireccionales',project:'',action:'Investiga la arquitectura para sincronizar Apple Watch con Alexa y Google Home via el orchestrator. Eventos bidireccionales, notificaciones push'},
+  {id:9,pri:3,cat:'research',title:'Sex Tech: Sensor Biofeedback',desc:'Sensor wearable para detectar proximidad al orgasmo. Biofeedback + ML + Apple Watch alerts',project:'',action:'Investiga la viabilidad de crear un wearable con sensores para detectar biofeedback durante relaciones. Sensores de HR, GSR, temperatura. ML model para prediccion'},
+  {id:10,pri:3,cat:'research',title:'Music Learning: Pitch & Voice',desc:'App que recibe MP3, aisla vocals, analiza pitch/tono y da feedback para mejorar canto',project:'',action:'Investiga como crear una app de aprendizaje de canto: recibir MP3, aislar voz con Demucs, analizar pitch con librosa, dar feedback en tiempo real'},
+  {id:11,pri:2,cat:'dev',title:'PlanetMoji: Reactivar proyecto',desc:'React Native app de emojis. Revisar estado, actualizar deps, push a store',project:'PlanetMoji',action:'Revisa el estado de PlanetMoji. Es un React Native app. Actualiza dependencias, revisa si compila, identifica que falta para publicar'},
+  {id:12,pri:3,cat:'dev',title:'Laurel Gaming: Turborepo setup',desc:'Monorepo con Turborepo. Verificar que build pipeline funciona',project:'laurel-gaming-mobile',action:'Revisa el estado del monorepo Laurel Gaming. Usa Turborepo. Verifica que turbo dev y turbo build funcionan correctamente'},
+  {id:13,pri:2,cat:'infra',title:'Orchestrator: Dashboard mejorado',desc:'Seguir mejorando el dashboard con mas integraciones, real-time websockets, notificaciones push en browser',project:'',action:'Mejora el dashboard del orchestrator: anade WebSocket para updates real-time, notificaciones push del browser, drag-and-drop de tareas'},
+];
+
+function fmt(s){if(!s||s<0)return'-';const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d>0?d+'d '+h+'h':h>0?h+'h '+m+'m':m+'m '+(s%60)+'s'}
+function ago(iso){if(!iso)return'';const d=Math.floor((Date.now()-new Date(iso))/1000);return d<60?'now':d<3600?Math.floor(d/60)+'m':d<86400?Math.floor(d/3600)+'h':Math.floor(d/86400)+'d'}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+
+function whereTag(action){
+  if(action==='code_change')return'<span class="pipe-where cursor">⚡ Cursor Opus 4.6</span>';
+  if(action==='conversation'||action==='plan'||action==='query')return'<span class="pipe-where gemini">🧠 Gemini 2.5</span>';
+  if(action==='operation'||action==='deploy'||action==='git')return'<span class="pipe-where mac">💻 Tu Mac</span>';
+  if(action==='domotica')return'<span class="pipe-where mac">🏠 Home Assistant</span>';
+  return'<span class="pipe-where gemini">🧠 AI</span>';
+}
+
+function taskCard(t){
+  const cls=t.status==='completed'?(t.success?'ok':'fail'):t.status==='failed'?'fail':t.status==='pending'?'pending':'running';
+  const icon=cls==='ok'?'✓':cls==='fail'?'✗':cls==='running'?'⚙':'○';
+  return'<div class="pipe-item"><div class="pipe-status '+cls+'">'+icon+'</div><div class="pipe-body">'+
+    '<div class="pipe-proj">'+esc(t.project||'global')+' <span style="color:var(--txt2);font-weight:400">/ '+esc(t.action)+'</span></div>'+
+    '<div class="pipe-msg">'+esc((t.raw_message||t.prompt||'').substring(0,120))+'</div>'+
+    '<div class="pipe-meta">'+ago(t.created_at)+' ago '+whereTag(t.action)+'</div></div><div></div></div>';
+}
+
+// ── Tabs ──────────────────────────
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Refresh ──────────────────────
+async function refresh(){
+  if(!API||API==='/api'&&location.hostname!=='localhost'&&location.hostname!=='127.0.0.1')return;
+  try{
+    const[sR,eR,tR]=await Promise.all([fetch(API+'/state'),fetch(API+'/events?limit=30'),fetch(API+'/tasks')]);
+    const state=await sR.json(),events=await eR.json(),tasks=await tR.json();
+    renderHeader(state,tasks);
+    renderDevices(state);
+    renderFlow(state,tasks);
+    renderPipeline(tasks);
+    renderModels();
+    renderTodos();
+    renderPreviews();
+    renderProjects(state.projects||[]);
+    renderDeploys(events.events||[]);
+    renderRecent(tasks);
+    renderEvents(events.events||[]);
+    renderMesh(state);
+    renderSystem(state);
+  }catch(e){console.error('Refresh:',e)}
+}
+
+function renderHeader(s,t){
+  document.getElementById('h-up').textContent=fmt(s.uptime||0);
+  document.getElementById('h-tasks').textContent=(t.active||[]).length+' active';
+  document.getElementById('h-mesh').textContent=(s.mesh?.connected||0)+' agents';
+}
+
+function renderDevices(s){
+  const ch=s.channels||{};const m=s.mesh||{};const mon=s.monitors||{};
+  const set=(id,on)=>{const el=document.getElementById(id);if(!el)return;el.className='device '+(on?'online':'offline');const st=el.querySelector('.device-status');if(st){st.className='device-status '+(on?'on':'off');st.textContent=on?'Online':'Offline'}};
+  set('d-mac',true);
+  set('d-iphone',ch.telegram||ch.whatsapp);
+  set('d-cursor',s.cursor_enabled);
+  set('d-vercel',mon.vercel?.running);
+  set('d-telegram',ch.telegram);
+  const vp=document.querySelector('#d-vercel .device-type');if(vp&&mon.vercel)vp.textContent=(mon.vercel.vercel_projects||0)+' Projects';
+}
+
+function renderFlow(s,t){
+  const ch=s.channels||{};const m=s.mesh||{};
+  const setA=(id,on)=>{const el=document.getElementById(id);if(el){if(on)el.classList.add('active');else el.classList.remove('active')}};
+  setA('n-telegram',ch.telegram);setA('n-whatsapp',ch.whatsapp);setA('n-dashboard',true);setA('n-gemini',true);setA('n-router',true);
+  const active=t.active||[];
+  setA('n-cursor',active.some(x=>x.action==='code_change')||s.cursor_enabled);
+  setA('n-mesh',(m.connected||0)>0);
+  setA('n-gemini2',active.some(x=>['conversation','plan','query'].includes(x.action)));
+  setA('n-ha',s.domotica_enabled);
+  document.getElementById('nc-cursor').textContent=active.filter(x=>x.action==='code_change').length+' running';
+  document.getElementById('nc-mesh').textContent=(m.connected||0)+' agents';
+}
+
+function renderPipeline(t){
+  const el=document.getElementById('pipe-list');
+  const active=t.active||[];
+  if(!active.length){el.innerHTML='<div class="empty">Sin tareas activas — lanza una desde la barra o un TODO</div>';return}
+  el.innerHTML=active.map(taskCard).join('');
+}
+
+function renderModels(){
+  const el=document.getElementById('ai-models');
+  el.innerHTML=
+    '<div class="monitor-row"><span><span class="model-tag opus">Cursor Opus 4.6 Max</span></span><span style="font-size:.6rem;color:var(--txt2)">Code changes, PRs</span></div>'+
+    '<div class="monitor-row"><span><span class="model-tag gemini">Gemini 2.5 Flash</span></span><span style="font-size:.6rem;color:var(--txt2)">Intent parsing, chat</span></div>'+
+    '<div class="monitor-row"><span><span class="model-tag groq">Groq Llama 3.3 70B</span></span><span style="font-size:.6rem;color:var(--txt2)">Divenamic chatbot</span></div>'+
+    '<div class="monitor-row"><span style="font-size:.65rem">Claude Code CLI</span><span style="font-size:.6rem;color:var(--txt2)">Agent mesh fallback</span></div>'+
+    '<div class="monitor-row"><span style="font-size:.65rem">Gemini Vision</span><span style="font-size:.6rem;color:var(--txt2)">Photo/species ID</span></div>';
+}
+
+function renderTodos(){
+  const el=document.getElementById('todo-list');
+  el.innerHTML=TODOS.sort((a,b)=>a.pri-b.pri).map(t=>{
+    return'<div class="todo-item">'+
+      '<div class="todo-pri p'+t.pri+'">P'+t.pri+'</div>'+
+      '<span class="todo-cat '+t.cat+'">'+t.cat+'</span>'+
+      '<div class="todo-body"><div class="todo-title">'+esc(t.title)+'</div><div class="todo-desc">'+esc(t.desc)+'</div></div>'+
+      '<button class="todo-action" onclick="launchTodo('+t.id+')">Launch</button></div>';
+  }).join('');
+}
+
+async function launchTodo(id){
+  const todo=TODOS.find(t=>t.id===id);if(!todo)return;
+  const pw=await requireAuth();if(!pw)return;
+  const btn=event.target;btn.disabled=true;btn.textContent='...';
+  try{
+    const body={message:todo.action,password:pw};if(todo.project)body.project=todo.project;
+    const res=await fetch(API+'/tasks/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(res.ok){btn.textContent='Launched!';btn.style.background='var(--grn)';setTimeout(refresh,1000)}
+    else if(res.status===403){sessionStorage.removeItem('sb_auth');btn.textContent='Wrong pw';btn.style.background='var(--red)'}
+    else{btn.textContent='Error';btn.style.background='var(--red)'}
+  }catch(e){btn.textContent='Error';btn.style.background='var(--red)'}
+  setTimeout(()=>{btn.disabled=false;btn.textContent='Launch';btn.style.background=''},3000);
+}
+
+function renderPreviews(){
+  const el=document.getElementById('previews');
+  document.getElementById('prev-c').textContent=WEBS.length;
+  el.innerHTML=WEBS.map(w=>
+    '<div class="preview-card"><iframe class="preview-frame" src="'+esc(w.url)+'" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe>'+
+    '<div class="preview-info"><span class="preview-name">'+esc(w.name)+'</span><a class="preview-link" href="'+esc(w.url)+'" target="_blank">Abrir ↗</a></div></div>'
+  ).join('');
+}
+
+function renderProjects(projects){
+  const el=document.getElementById('proj-grid');
+  document.getElementById('proj-c').textContent=projects.length;
+  if(!projects.length){el.innerHTML='<div class="empty">Sin proyectos</div>';return}
+  el.innerHTML=projects.map(p=>{
+    const st=p.error?'Error':p.has_uncommitted?p.uncommitted_count+' cambios':'Clean';
+    const em=p.has_uncommitted?'🟡':p.ahead>0?'🔵':'🟢';
+    return'<div class="proj-card"><div class="proj-name">'+em+' '+esc(p.name)+'</div><div class="proj-meta">'+
+      (p.branch?'<span class="tag" style="color:var(--blu)">'+esc(p.branch)+'</span>':'')+
+      '<span class="tag">'+st+'</span>'+(p.stack?'<span class="tag">'+esc(p.stack)+'</span>':'')+
+    '</div></div>';
+  }).join('');
+}
+
+function renderDeploys(events){
+  const deps=events.filter(e=>e.type&&e.type.startsWith('deploy_'));
+  const el=document.getElementById('deploys');
+  document.getElementById('dep-c').textContent=deps.length;
+  if(!deps.length){el.innerHTML='<div class="empty">Sin deployments recientes</div>';return}
+  el.innerHTML=deps.slice(-10).reverse().map(e=>{
+    const t=new Date(e.dt).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    const url=e.metadata?.url||'';const st=e.type==='deploy_success'?'ready':e.type==='deploy_failed'?'error':'building';
+    return'<div class="deploy-item"><span>▲ '+esc(e.project)+'</span><span class="deploy-status '+st+'">'+st+'</span>'+
+      (url?'<a href="'+esc(url)+'" target="_blank" style="color:var(--blu);font-size:.6rem">↗</a>':'')+
+      '<span style="color:var(--txt2);font-size:.58rem">'+t+'</span></div>';
+  }).join('');
+}
+
+function renderRecent(t){
+  const el=document.getElementById('recent-tasks');
+  const recent=t.recent||[];
+  document.getElementById('recent-c').textContent=recent.length;
+  if(!recent.length){el.innerHTML='<div class="empty">Sin historial</div>';return}
+  el.innerHTML=recent.slice(0,15).map(taskCard).join('');
+}
+
+function renderEvents(events){
+  const el=document.getElementById('ev-list');
+  document.getElementById('ev-c').textContent=events.length;
+  if(!events.length){el.innerHTML='<div class="empty">Esperando...</div>';return}
+  el.innerHTML=events.slice().reverse().slice(0,25).map(e=>{
+    const t=new Date(e.dt).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    return'<div class="ev-item"><span class="ev-icon">'+(e.icon||'📌')+'</span><div class="ev-body">'+
+      '<span class="ev-proj">'+esc(e.project)+'</span> <span class="ev-time">'+t+'</span>'+
+      '<div style="color:var(--txt2)">'+esc(e.message)+'</div></div></div>';
+  }).join('');
+}
+
+function renderMesh(s){
+  const el=document.getElementById('mesh-panel');
+  const agents=(s.mesh?.agents)||[];
+  if(!agents.length){el.innerHTML='<div class="empty">Sin agentes conectados.<br>El daemon corre en tu Mac y ejecuta comandos locales.</div>';return}
+  el.innerHTML=agents.map(a=>{
+    const caps=(a.capabilities||[]).slice(0,8);
+    return'<div class="agent-card"><div class="agent-name"><span class="dot on"></span>'+esc(a.name||a.hostname||'agent')+'</div>'+
+      '<div class="agent-meta">'+esc(a.os||'')+' · '+(a.projects||0)+' projects · max '+(a.max_tasks||'?')+' tasks</div>'+
+      (caps.length?'<div class="cap-tags">'+caps.map(c=>'<span class="cap">'+esc(c)+'</span>').join('')+'</div>':'')+
+    '</div>';
+  }).join('');
+}
+
+function renderSystem(s){
+  const el=document.getElementById('sys-status');
+  const m=s.monitors||{};const ch=s.channels||{};
+  const row=(n,on,d)=>'<div class="monitor-row"><span><span class="dot '+(on?'on':'off')+'"></span>'+n+'</span><span style="color:var(--txt2);font-size:.6rem">'+(d||(on?'Active':'Off'))+'</span></div>';
+  el.innerHTML=
+    row('Telegram',ch.telegram,'@sierraAIBot')+row('WhatsApp',ch.whatsapp,'Baileys bridge')+
+    row('GitHub',m.github?.running,m.github?.repos_tracked?m.github.repos_tracked+' repos':'')+
+    row('Vercel',m.vercel?.running,m.vercel?.vercel_projects?m.vercel.vercel_projects+' projects':'')+
+    row('Cursor API',s.cursor_enabled,'Opus 4.6 Max')+
+    row('Domotica',s.domotica_enabled,'Docker local');
+}
+
+// ── Chatbot ──────────────────────
+async function sendChat(){
+  const inp=document.getElementById('chat-in');const msgs=document.getElementById('chat-msgs');
+  const msg=inp.value.trim();if(!msg)return;inp.value='';
+  msgs.innerHTML+='<div class="chatbot-msg user">'+esc(msg)+'</div>';
+  msgs.scrollTop=msgs.scrollHeight;
+  try{
+    const r=await fetch('https://divenamic-api.divenamic.workers.dev/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,userId:'dashboard-'+Date.now(),platform:'web'})});
+    const d=await r.json();
+    msgs.innerHTML+='<div class="chatbot-msg bot">'+esc(d.response||d.message||'...')+'</div>';
+  }catch(e){msgs.innerHTML+='<div class="chatbot-msg bot" style="color:var(--red)">Error: '+esc(e.message)+'</div>'}
+  msgs.scrollTop=msgs.scrollHeight;
+}
+document.getElementById('chat-in').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendChat()}});
+
+async function loadChatStats(){
+  const el=document.getElementById('chat-stats');
+  try{
+    const r=await fetch('https://divenamic-api.divenamic.workers.dev/api/chat/feedback/stats');
+    const d=await r.json();
+    el.innerHTML=
+      '<div class="monitor-row"><span>Total feedback</span><span style="color:var(--acc2)">'+(d.total||0)+'</span></div>'+
+      '<div class="monitor-row"><span>Positive</span><span style="color:var(--grn)">'+(d.positive||0)+'</span></div>'+
+      '<div class="monitor-row"><span>Negative</span><span style="color:var(--red)">'+(d.negative||0)+'</span></div>';
+  }catch(e){el.innerHTML='<div class="empty">Stats no disponibles</div>'}
+}
+
+// ── Command Bar ──────────────────
+async function loadProjects(){
+  try{const r=await fetch(API+'/registry');const d=await r.json();const s=document.getElementById('cmd-proj');
+    (d.projects||[]).forEach(p=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;s.appendChild(o)});
+  }catch(e){}}
+
+async function launchTask(){
+  const input=document.getElementById('cmd-in');const proj=document.getElementById('cmd-proj').value;
+  const btn=document.getElementById('cmd-go');const fb=document.getElementById('cmd-fb');
+  const msg=input.value.trim();if(!msg){input.focus();return}
+  const pw=await requireAuth();if(!pw){return}
+  btn.disabled=true;btn.textContent='...';fb.className='cmd-fb show info';fb.textContent='Parsing & launching...';
+  try{
+    const body={message:msg,password:pw};if(proj)body.project=proj;
+    const res=await fetch(API+'/tasks/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(res.ok){fb.className='cmd-fb show ok';fb.textContent='Launched: '+data.action+' on '+(data.project||'global')+' ['+data.task_id.substring(0,8)+']';input.value='';setTimeout(refresh,1000)}
+    else if(res.status===403){sessionStorage.removeItem('sb_auth');fb.className='cmd-fb show err';fb.textContent='Password incorrecto. Intenta de nuevo.'}
+    else{fb.className='cmd-fb show err';fb.textContent='Error: '+(data.error||'Unknown')}
+  }catch(e){fb.className='cmd-fb show err';fb.textContent='Network error: '+e.message}
+  btn.disabled=false;btn.textContent='Launch';setTimeout(()=>{fb.className='cmd-fb'},6000);
+}
+document.getElementById('cmd-in').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();launchTask()}});
+
+// ── Init ─────────────────────────
+loadChatStats();setInterval(refresh,5000);
+</script>
+</body>
+</html>

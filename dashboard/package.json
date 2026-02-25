@@ -1,0 +1,9 @@
+{
+  "name": "sierrabot-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sierra Bot Command Center - static dashboard",
+  "scripts": {
+    "deploy": "npx wrangler pages deploy . --project-name=sierrabot-dashboard"
+  }
+}
