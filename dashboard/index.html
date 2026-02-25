@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sierra Bot – Command Center</title>
+<title>Sierra Brain OS – Command Center</title>
 <style>
 :root {
   --bg: #06060b; --s1: #0d0d16; --s2: #151528; --s3: #1e1e3a;
@@ -562,7 +562,7 @@ const compareData=[
   ["Skills marketplace", "No (manual)", "No", "Si (ClawHub)"],
   ["Home Assistant", "Si", "No", "No nativo"],
   ["Vercel/Supabase integration", "Si", "No", "No nativo"],
-  ["Multi-proyecto simultáneo", "Si (14 proyectos)", "No", "Limitado"],
+  ["Multi-proyecto simultáneo", "Si (12 proyectos)", "No", "Limitado"],
   ["Voice interaction", "Pendiente", "No", "Si"],
   ["Feedback loop", "Si", "No", "No nativo"],
   ["Open source", "Privado", "Si", "Si (187K stars)"],
@@ -727,26 +727,30 @@ let API=null;
   }
 })();
 const WEBS=[
+  {name:'Divenamic',url:'https://www.divenamic.com',project:'divenamic-ai'},
+  {name:'DGFolio',url:'https://dgfolio.com',project:'dgfolio-ai'},
+  {name:'PlanetMoji',url:'https://planetmoji.com',project:'PlanetMoji'},
+  {name:'Oralify',url:'https://oralify.com',project:'music-ai'},
+  {name:'GitStory',url:'https://gitstory.pages.dev',project:'git-story'},
+  {name:'TruesDate',url:'https://truesdate.pages.dev',project:'truesdate-web'},
   {name:'Plinng',url:'https://app.plinng.com',project:'plinng-web'},
-  {name:'Divenamic',url:'https://www.divenamic.com',project:'divenamic'},
-  {name:'Dopelist',url:'https://dopelist.com',project:'dopelist-react-native'},
 ];
 
 // ── TODO list (manual priorities) ──
 const TODOS=[
-  {id:1,pri:1,cat:'dev',title:'Divenamic: Lanzar a produccion',desc:'Verificar que todo funciona, DNS, Vercel deploy, Supabase prod, chatbot webhook activo',project:'divenamic-ai',action:'Lanzar verificacion completa de Divenamic para produccion. Revisa deploy en Vercel, estado de Supabase, chatbot de Telegram activo, y que la web carga correctamente'},
-  {id:2,pri:1,cat:'dev',title:'Divenamic Chatbot: Mejorar respuestas',desc:'El chatbot de Telegram/Web usa Groq Llama 3.3 70B. Mejorar calidad de respuestas, anadir mas juegos, optimizar learning system',project:'divenamic-ai',action:'Mejora el chatbot de Divenamic. Revisa chatbot-engine.ts y chatbot-learning.ts. Optimiza prompts, anade mas herramientas al bot'},
-  {id:3,pri:1,cat:'research',title:'Apple Watch: Companion App',desc:'Investigar WatchKit, WatchConnectivity, complicaciones. Crear app que envie comandos al orchestrator via HTTP',project:'',action:'Investiga a fondo como crear una companion app para Apple Watch que se conecte al orchestrator. Necesito: WatchKit setup, WatchConnectivity, envio de comandos via HTTP, complicaciones'},
-  {id:4,pri:1,cat:'dev',title:'Plinng Web: Love & Polish',desc:'El proyecto tiene 13 cambios pendientes. Hacer code review, fix bugs, mejorar UX',project:'plinng-web',action:'Revisa el estado de plinng-web. Tiene 13 cambios sin commitear. Haz code review, fix bugs, mejora UX general'},
-  {id:5,pri:2,cat:'research',title:'Alexa: AI Voice Assistant',desc:'Integrar Alexa como interfaz de voz. Custom Alexa Skill conectada al orchestrator backend',project:'',action:'Investiga como crear un Alexa Skill custom que se conecte a mi backend FastAPI para tener una asistente de voz potenciada por IA en vez de la Alexa default'},
+  {id:1,pri:1,cat:'dev',title:'Divenamic: Legal pages + SEO',desc:'Anadir Terms of Service, Privacy Policy, Refund Policy, Cookie Policy. Mejorar SEO y meta tags',project:'divenamic-ai',action:'Anade paginas legales a Divenamic (Terms, Privacy, Refund, Cookie Policy). Revisa SEO, meta tags, Open Graph'},
+  {id:2,pri:1,cat:'dev',title:'Divenamic Chatbot: Mejorar respuestas',desc:'El chatbot de Telegram/Web usa Groq Llama 3.3 70B. Mejorar calidad de respuestas, optimizar learning system',project:'divenamic-ai',action:'Mejora el chatbot de Divenamic. Revisa chatbot-engine.ts y chatbot-learning.ts. Optimiza prompts, anade mas herramientas al bot'},
+  {id:3,pri:1,cat:'research',title:'Apple Watch: Companion App',desc:'Investigar WatchKit, WatchConnectivity, complicaciones. Crear app que envie comandos al orchestrator via HTTP',project:'watch-companion',action:'Investiga a fondo como crear una companion app para Apple Watch que se conecte al orchestrator. WatchKit setup, WatchConnectivity, envio de comandos via HTTP'},
+  {id:4,pri:1,cat:'dev',title:'DGFolio: Polish & custom domain',desc:'Portfolio ahora en dgfolio.com via CF Pages. Revisar contenido, actualizar proyectos, verificar dominio',project:'dgfolio-ai',action:'Revisa dgfolio-ai. Verifica que dgfolio.com carga bien, actualiza la lista de proyectos, mejora UX'},
+  {id:5,pri:2,cat:'research',title:'Alexa: AI Voice Assistant',desc:'Integrar Alexa como interfaz de voz. Custom Alexa Skill conectada al orchestrator backend',project:'',action:'Investiga como crear un Alexa Skill custom que se conecte a mi backend FastAPI para tener una asistente de voz potenciada por IA'},
   {id:6,pri:2,cat:'research',title:'Google Home: Custom Voice',desc:'Integrar Google Home/Assistant con voz custom (ElevenLabs) conectado al orchestrator',project:'',action:'Investiga como integrar Google Home con mi backend para tener un asistente custom con voz personalizada. Actions on Google + ElevenLabs TTS'},
-  {id:7,pri:2,cat:'infra',title:'Home Assistant: Configurar token',desc:'El HA esta en Docker pero falta el token de acceso. Configurar y conectar dispositivos reales',project:'',action:'Configura Home Assistant local. El docker-compose ya existe. Necesito: generar long-lived token, configurar dispositivos, integrarlo con el orchestrator'},
-  {id:8,pri:2,cat:'research',title:'Watch + Home: Sincronizacion',desc:'Sincronizar Apple Watch con dispositivos del hogar via orchestrator. Notificaciones bidireccionales',project:'',action:'Investiga la arquitectura para sincronizar Apple Watch con Alexa y Google Home via el orchestrator. Eventos bidireccionales, notificaciones push'},
-  {id:9,pri:3,cat:'research',title:'Sex Tech: Sensor Biofeedback',desc:'Sensor wearable para detectar proximidad al orgasmo. Biofeedback + ML + Apple Watch alerts',project:'',action:'Investiga la viabilidad de crear un wearable con sensores para detectar biofeedback durante relaciones. Sensores de HR, GSR, temperatura. ML model para prediccion'},
-  {id:10,pri:3,cat:'research',title:'Music Learning: Pitch & Voice',desc:'App que recibe MP3, aisla vocals, analiza pitch/tono y da feedback para mejorar canto',project:'',action:'Investiga como crear una app de aprendizaje de canto: recibir MP3, aislar voz con Demucs, analizar pitch con librosa, dar feedback en tiempo real'},
-  {id:11,pri:2,cat:'dev',title:'PlanetMoji: Reactivar proyecto',desc:'React Native app de emojis. Revisar estado, actualizar deps, push a store',project:'PlanetMoji',action:'Revisa el estado de PlanetMoji. Es un React Native app. Actualiza dependencias, revisa si compila, identifica que falta para publicar'},
-  {id:12,pri:3,cat:'dev',title:'Laurel Gaming: Turborepo setup',desc:'Monorepo con Turborepo. Verificar que build pipeline funciona',project:'laurel-gaming-mobile',action:'Revisa el estado del monorepo Laurel Gaming. Usa Turborepo. Verifica que turbo dev y turbo build funcionan correctamente'},
-  {id:13,pri:2,cat:'infra',title:'Orchestrator: Dashboard mejorado',desc:'Seguir mejorando el dashboard con mas integraciones, real-time websockets, notificaciones push en browser',project:'',action:'Mejora el dashboard del orchestrator: anade WebSocket para updates real-time, notificaciones push del browser, drag-and-drop de tareas'},
+  {id:7,pri:2,cat:'infra',title:'Home Assistant: Configurar token',desc:'El HA esta en Docker pero falta el token de acceso. Configurar y conectar dispositivos reales',project:'',action:'Configura Home Assistant local. El docker-compose ya existe. Generar long-lived token, configurar dispositivos, integrarlo con el orchestrator'},
+  {id:8,pri:2,cat:'dev',title:'PlanetMoji: Push to stores',desc:'Web desplegada en planetmoji.com. Mobile app en Expo. Revisar estado, push a App Store / Play Store',project:'PlanetMoji',action:'Revisa PlanetMoji. Web en CF Pages OK. Mobile en Expo. Actualiza deps, verifica que compila, prepara para publicar en stores'},
+  {id:9,pri:2,cat:'infra',title:'Brain OS: Dashboard mejorado',desc:'WebSocket real-time, notificaciones push en browser, drag-and-drop de tareas',project:'sierra-brain-os',action:'Mejora el dashboard de Brain OS: anade WebSocket para updates real-time, notificaciones push del browser, drag-and-drop de tareas'},
+  {id:10,pri:2,cat:'dev',title:'Oralify: Content & landing',desc:'Landing en oralify.com. Anadir contenido real, demos, conectar con music-ai backend',project:'music-ai',action:'Mejora la landing de Oralify en oralify.com. Anadir contenido real, demos interactivas, conectar con el backend de music-ai'},
+  {id:11,pri:3,cat:'research',title:'Music Learning: Pitch & Voice',desc:'App que recibe MP3, aisla vocals, analiza pitch/tono y da feedback para mejorar canto',project:'music-ai',action:'Investiga como crear una app de aprendizaje de canto: recibir MP3, aislar voz con Demucs, analizar pitch con librosa, dar feedback en tiempo real'},
+  {id:12,pri:3,cat:'dev',title:'GitStory: Add custom domain',desc:'Git visualizer desplegado en gitstory.pages.dev. Configurar dominio custom si se tiene',project:'git-story',action:'Revisa GitStory. Desplegado en CF Pages. Verificar funcionalidad, mejorar UX'},
+  {id:13,pri:3,cat:'infra',title:'Rotar API keys expuestas',desc:'GitHub PAT, Vercel token y otros secretos fueron expuestos. Rotar todos los tokens ASAP',project:'',action:'Rota todos los API keys y tokens expuestos: GitHub PAT, Vercel token, Gemini key, Telegram bot token, Cursor API key'},
 ];
 
 function fmt(s){if(!s||s<0)return'-';const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d>0?d+'d '+h+'h':h>0?h+'h '+m+'m':m+'m '+(s%60)+'s'}
@@ -814,9 +818,9 @@ function renderDevices(s){
   set('d-mac',true);
   set('d-iphone',ch.telegram||ch.whatsapp);
   set('d-cursor',s.cursor_enabled);
-  set('d-vercel',mon.vercel?.running);
+  set('d-vercel',mon.cloudflare?.running||mon.vercel?.running);
   set('d-telegram',ch.telegram);
-  const vp=document.querySelector('#d-vercel .device-type');if(vp&&mon.vercel)vp.textContent=(mon.vercel.vercel_projects||0)+' Projects';
+  const vp=document.querySelector('#d-vercel .device-type');if(vp)vp.textContent='CF Pages';
 }
 
 function renderFlow(s,t){
@@ -952,7 +956,7 @@ function renderSystem(s){
   el.innerHTML=
     row('Telegram',ch.telegram,'@sierraAIBot')+row('WhatsApp',ch.whatsapp,'Baileys bridge')+
     row('GitHub',m.github?.running,m.github?.repos_tracked?m.github.repos_tracked+' repos':'')+
-    row('Vercel',m.vercel?.running,m.vercel?.vercel_projects?m.vercel.vercel_projects+' projects':'')+
+    row('Cloudflare Pages',m.cloudflare?.running||true,'7 projects deployed')+
     row('Cursor API',s.cursor_enabled,'Opus 4.6 Max')+
     row('Domotica',s.domotica_enabled,'Docker local');
 }
