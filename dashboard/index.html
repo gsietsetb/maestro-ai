@@ -388,13 +388,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 
 <!-- ═══ TAB: Deploys ═════════════ -->
 <div class="tab-panel" id="tab-deploys">
+  <div style="padding:.6rem 1.2rem">
+    <div class="section-title">Domain & Hosting Admin</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.68rem" id="domains-table">
+        <thead><tr style="background:var(--s2);text-align:left">
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Project</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Domain</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Hosting</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">DNS</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Email</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Legal</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Repo</th>
+          <th style="padding:.4rem .5rem;border:1px solid var(--brd)">Status</th>
+        </tr></thead>
+        <tbody id="domains-body"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:.8rem;display:flex;gap:.5rem;flex-wrap:wrap;font-size:.6rem;color:var(--txt2)">
+      <span>Legend:</span>
+      <span style="color:var(--org)">☁ Cloudflare Pages</span>
+      <span style="color:var(--blu)">▲ Vercel</span>
+      <span style="color:var(--pur)">⬡ Heroku</span>
+      <span style="color:var(--grn)">● Live</span>
+      <span style="color:var(--red)">● Down</span>
+    </div>
+  </div>
   <div class="grid-2" style="padding-top:.6rem">
     <div class="card">
       <div class="card-h">Web Previews <span class="c" id="prev-c">0</span></div>
       <div class="card-b"><div class="previews" id="previews"></div></div>
     </div>
     <div class="card">
-      <div class="card-h">Vercel Deploys <span class="c" id="dep-c">0</span></div>
+      <div class="card-h">Recent Deploys <span class="c" id="dep-c">0</span></div>
       <div class="card-b" id="deploys"></div>
     </div>
   </div>
@@ -735,6 +761,66 @@ const WEBS=[
   {name:'TruesDate',url:'https://truesdate.pages.dev',project:'truesdate-web'},
   {name:'Plinng',url:'https://app.plinng.com',project:'plinng-web'},
 ];
+
+const ALL_DOMAINS=[
+  {project:'divenamic-ai',domain:'divenamic.com',hosting:'cf-pages',dns:'cloudflare',email:'cf-routing+mailgun',legal:['terms','privacy','cookies','refunds','operator-terms'],repo:'gsietsetb/divenamic',status:'live',notes:'LLC Wyoming. Stripe. Supabase.'},
+  {project:'dgfolio-ai',domain:'dgfolio.com',hosting:'cf-pages',dns:'cloudflare',email:'cf-routing',legal:[],repo:'gsietsetb/dgfolio-ai',status:'live',notes:'Portfolio. Email forwarding.'},
+  {project:'PlanetMoji',domain:'planetmoji.com',hosting:'cf-pages',dns:'cloudflare',email:'none',legal:[],repo:'gsietsetb/PlanetMoji',status:'live',notes:'Emoji games. Vite + React.'},
+  {project:'music-ai',domain:'oralify.com',hosting:'cf-pages',dns:'cloudflare',email:'cf-routing',legal:[],repo:'gsietsetb/music-ai',status:'live',notes:'Music/voice learning.'},
+  {project:'git-story',domain:'gitstory.pages.dev',hosting:'cf-pages',dns:'cloudflare',email:'none',legal:[],repo:'gsietsetb/git-story',status:'live',notes:'Git commit visualizer.'},
+  {project:'truesdate-web',domain:'truesdate.pages.dev',hosting:'cf-pages',dns:'cloudflare',email:'none',legal:[],repo:'gsietsetb/truesdate-web',status:'live',notes:'Dating app landing.'},
+  {project:'sierra-brain-os',domain:'sierrabot.pages.dev',hosting:'cf-pages',dns:'cloudflare',email:'none',legal:[],repo:'gsietsetb/sierra-brain-os',status:'live',notes:'This dashboard.'},
+  {project:'divenamic-api',domain:'api.divenamic.com',hosting:'heroku',dns:'cloudflare',email:'n/a',legal:[],repo:'gsietsetb/divenamic',status:'live',notes:'Backend API. Heroku.'},
+  {project:'plinng-web',domain:'app.plinng.com',hosting:'vercel',dns:'external',email:'n/a',legal:[],repo:'G97-TECH-MKT/plinng-web',status:'live',notes:'Company. Vercel.'},
+  {project:'plinng-expo',domain:'—',hosting:'expo',dns:'n/a',email:'n/a',legal:[],repo:'G97-TECH-MKT/orbidi-mobile-expo',status:'dev',notes:'Company. Mobile app.'},
+  {project:'ella-neo-controller',domain:'—',hosting:'—',dns:'n/a',email:'n/a',legal:[],repo:'gsietsetb/ella-neo-controller',status:'dev',notes:'IoT controller.'},
+  {project:'watch-companion',domain:'—',hosting:'—',dns:'n/a',email:'n/a',legal:[],repo:'gsietsetb/watch-companion',status:'dev',notes:'Apple Watch companion.'},
+];
+
+function renderDomains(){
+  const tb=document.getElementById('domains-body');if(!tb)return;
+  const hostIcon=(h)=>{
+    if(h==='cf-pages')return'<span style="color:var(--org)" title="Cloudflare Pages">☁ CF Pages</span>';
+    if(h==='vercel')return'<span style="color:var(--blu)" title="Vercel">▲ Vercel</span>';
+    if(h==='heroku')return'<span style="color:var(--pur)" title="Heroku">⬡ Heroku</span>';
+    if(h==='expo')return'<span style="color:var(--cyn)" title="Expo">📱 Expo</span>';
+    return'<span style="color:var(--txt2)">'+h+'</span>';
+  };
+  const dnsIcon=(d)=>{
+    if(d==='cloudflare')return'<span style="color:var(--org)">☁ CF</span>';
+    if(d==='external')return'<span style="color:var(--txt2)">🌐 External</span>';
+    return'<span style="color:var(--txt2)">'+d+'</span>';
+  };
+  const emailIcon=(e)=>{
+    if(e==='cf-routing+mailgun')return'<span style="color:var(--grn)">✓ CF→Gmail + Mailgun SMTP</span>';
+    if(e==='cf-routing')return'<span style="color:var(--grn)">✓ CF→Gmail</span>';
+    return'<span style="color:var(--txt2)">'+e+'</span>';
+  };
+  const statusDot=(s)=>{
+    if(s==='live')return'<span style="color:var(--grn)">● Live</span>';
+    if(s==='dev')return'<span style="color:var(--ylw)">○ Dev</span>';
+    return'<span style="color:var(--red)">● '+s+'</span>';
+  };
+  const legalBadges=(arr)=>{
+    if(!arr.length)return'<span style="color:var(--txt3)">—</span>';
+    return arr.map(l=>'<a href="https://divenamic.com/legal/'+l+'" target="_blank" style="background:var(--grn2);color:var(--grn);padding:.1rem .3rem;border-radius:4px;font-size:.55rem;text-decoration:none;margin-right:.15rem">'+l+'</a>').join('');
+  };
+  tb.innerHTML=ALL_DOMAINS.map(d=>{
+    const domainLink=d.domain.includes('.')&&d.domain!=='—'?'<a href="https://'+d.domain+'" target="_blank" style="color:var(--blu);text-decoration:none">'+d.domain+' ↗</a>':d.domain;
+    const repoLink='<a href="https://github.com/'+d.repo+'" target="_blank" style="color:var(--pur);text-decoration:none;font-size:.6rem">'+d.repo.split('/')[1]+' ↗</a>';
+    return'<tr style="border-bottom:1px solid var(--brd)">'+
+      '<td style="padding:.35rem .5rem;border:1px solid var(--brd);font-weight:700;font-size:.7rem">'+d.project+'</td>'+
+      '<td style="padding:.35rem .5rem;border:1px solid var(--brd)">'+domainLink+'</td>'+
+      '<td style="padding:.35rem .5rem;border:1px solid var(--brd)">'+hostIcon(d.hosting)+'</td>'+
+      '<td style="padding:.35rem .5rem;border:1px solid var(--brd)">'+dnsIcon(d.dns)+'</td>'+
+      '<td style="padding:.35rem .5rem;border:1px solid var(--brd)">'+emailIcon(d.email)+'</td>'+
+      '<td style="padding:.35rem .5rem;border:1px solid var(--brd)">'+legalBadges(d.legal)+'</td>'+
+      '<td style="padding:.35rem .5rem;border:1px solid var(--brd)">'+repoLink+'</td>'+
+      '<td style="padding:.35rem .5rem;border:1px solid var(--brd)">'+statusDot(d.status)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+renderDomains();
 
 // ── TODO list (manual priorities) ──
 const TODOS=[
